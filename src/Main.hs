@@ -34,7 +34,7 @@ main = do
         ("http://localhost:8080/" <>)
         [ "permutation/random/10",
           "permutation/2341",
-          "permutation/2341/2",
+          "permutation/2341/power/2",
           "permtree/3"
         ]
   Warp.runSettings settings app
@@ -51,7 +51,7 @@ app = serve (Proxy @RandomPermAPI) server
 type RandomPermAPI =
   "permutation" :> "random" :> Capture "n" Int :> Get '[SVG] LBS.ByteString
     :<|> "permutation" :> Capture "perm" Int :> Get '[SVG] LBS.ByteString
-    :<|> "permutation" :> Capture "perm" Int :> Capture "exponent" Int :> Get '[SVG] LBS.ByteString
+    :<|> "permutation" :> Capture "perm" Int :> "power" :> Capture "exponent" Int :> Get '[SVG] LBS.ByteString
     :<|> "permtree" :> Capture "n" Int :> Get '[SVG] LBS.ByteString
 
 server :: Server RandomPermAPI
