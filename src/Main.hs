@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -84,7 +83,7 @@ server =
 
 permStrToEdges :: String -> [(Int, Int)]
 permStrToEdges str =
-  zipWith (,) xs (tail xs)
+  zip xs (tail xs)
   where
     xs = rd <$> List.inits str
     rd = fromMaybe 0 . readMaybe
