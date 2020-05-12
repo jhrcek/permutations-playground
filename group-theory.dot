@@ -1,0 +1,46 @@
+digraph {
+    layout=dot
+    rankdir=RL
+    node[shape=rect]
+    
+    "Subrgroup\nof <Group>" -> Group [label="is a"] /* Group */
+    "Quotient G." -> Group [label="is a"] /* Group */
+    "Normal S." -> "Subrgroup\nof <Group>" [label="is a"] /* Group */
+    "Finite G." -> Group [label="is a"] /* Group */
+    "Abelian G." -> Group [label="is a"] /* Group */
+    "Cyclic G." -> "Abelian G." [label="is a"] /* Group */
+    "Characteristic S." -> "Normal S." [label="is a"] /* Group */
+    "Simple G." -> Group [label="is a"] /* Group */
+    "Trivial G." -> "Simple G." [label="is a"] /* Group */
+    "Trivial G." -> "Finite G."
+    "Cyclic G.\n(prime order)" -> "Cyclic G." [label="is a "] /* Group */
+    "Cyclic G.\n(prime order)" -> "Simple G." [label="is a"] /* Group */
+    "Alternating G." -> Group [label="is a"] /* Group */
+    "Normalizer\nof <Subset of G>" -> "Subrgroup\nof <Group>" [label="is a"] /* :: Set -> Group */
+    "Centralizer\nof <Subset of G>" -> "Subrgroup\nof <Group>" [label="is a"]
+    "Centralizer\nof <Subset of G>" -> "Normalizer\nof <Subset of G>" [label="is normal\nsubgroup of"]
+    "Alternating G.\n(degree 5+)" -> "Alternating G." [label="is a"]
+    "Alternating G.\n(degree 5+)" -> "Simple G." [label="is a"]
+    "Group of Lie type" -> {"Simple G.", "Finite G."}
+    "Index of <Subgroup>\nin <Group>" -> {"Subrgroup\nof <Group>", Group}
+    "Coset of <Subgroup>\nin <Group>" -> {"Subrgroup\nof <Group>", Group}
+    "Sporadic G." -> "Simple G."
+    Group -> "Center of <Group>" [label=has]
+    "Center of <Group>" -> "Normal S."
+    "Commutator S." -> "Normal S."
+    "Homomorphism :\nG -> H" -> "Kernel\nof <Homomorphism>" [label="has"]
+    "Homomorphism :\nG -> H" -> Group [label="is domain of"]
+    "Homomorphism :\nG -> H" -> Group [label="is codomain of"]
+    "Kernel\nof <Homomorphism>" -> "Normal S." [label="is a"]
+
+ /* TODO:
+
+ https://en.wikipedia.org/wiki/Regular_representation 
+ https://en.wikipedia.org/wiki/Group_action_(mathematics)#Orbits_and_stabilizers
+ https://en.wikipedia.org/wiki/Centralizer_and_normalizer
+ https://en.wikipedia.org/wiki/Conjugacy_class
+ 
+ */
+  
+}
+
