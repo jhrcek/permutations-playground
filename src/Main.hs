@@ -6,23 +6,19 @@
 
 module Main where
 
-import Control.Monad.IO.Class
 import qualified Data.Array as Array
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (digitToInt)
-import qualified Data.Foldable as Fold
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
-import Data.Proxy
-import Math.Combinat.Permutations
-import Network.HTTP.Media
-import Network.Wai
+import Data.Proxy (Proxy (..))
+import Math.Combinat.Permutations (Permutation, maybePermutation, multiplyMany, permutationArray, randomPermutation)
+import Network.HTTP.Media ((//))
 import qualified Network.Wai.Handler.Warp as Warp
-import Servant
-import Servant.API
-import System.Random
+import Servant ((:<|>) (..), (:>), Accept, Application, Capture, Get, Handler, MimeRender, Server, contentType, err400, err500, errBody, mimeRender, serve, throwError)
+import System.Random (newStdGen)
 import Text.Read (readMaybe)
 import Turtle
 import qualified Turtle.Bytes
@@ -80,7 +76,7 @@ server =
     permTreeH n
       | 1 <= n && n <= 4 = do
         let allPerms = concatMap show <$> List.permutations [1 .. n]
-            edges = List.nub . List.sort $ Fold.concatMap permStrToEdges allPerms
+            edges = List.nub . List.sort $ concatMap permStrToEdges allPerms
         renderGraphFromEdges Dot edges
       | otherwise = throwError $ err400 {errBody = "Out of range [1 .. 4]"}
 
@@ -130,7 +126,7 @@ engineCommand Circo = "circo"
 
 data SVG
 
-instance Servant.API.Accept SVG where
+instance Accept SVG where
   contentType _ = "image" // "svg+xml"
 
 instance MimeRender SVG SvgGraph where
