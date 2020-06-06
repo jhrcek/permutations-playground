@@ -8,6 +8,7 @@ module Main where
 
 import Control.Monad.IO.Class
 import qualified Data.Array as Array
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (digitToInt)
@@ -49,10 +50,12 @@ app :: Application
 app = serve (Proxy @RandomPermAPI) server
 
 type RandomPermAPI =
-  "permutation" :> "random" :> Capture "n" Int :> Get '[SVG] LBS.ByteString
-    :<|> "permutation" :> Capture "perm" Int :> Get '[SVG] LBS.ByteString
-    :<|> "permutation" :> Capture "perm" Int :> "power" :> Capture "exponent" Int :> Get '[SVG] LBS.ByteString
-    :<|> "permtree" :> Capture "n" Int :> Get '[SVG] LBS.ByteString
+  "permutation" :> "random" :> Capture "n" Int :> Get '[SVG] SvgGraph
+    :<|> "permutation" :> Capture "perm" Int :> Get '[SVG] SvgGraph
+    :<|> "permutation" :> Capture "perm" Int :> "power" :> Capture "exponent" Int :> Get '[SVG] SvgGraph
+    :<|> "permtree" :> Capture "n" Int :> Get '[SVG] SvgGraph
+
+newtype SvgGraph = SvgGraph ByteString
 
 server :: Server RandomPermAPI
 server =
@@ -61,19 +64,19 @@ server =
     :<|> permutationPowerH
     :<|> permTreeH
   where
-    randomPermutationH :: Int -> Handler LBS.ByteString
+    randomPermutationH :: Int -> Handler SvgGraph
     randomPermutationH n = do
       gen <- liftIO newStdGen
       let perm = fst $ randomPermutation n gen
       servePermutation perm
     -- TODO change Int to Permutation
-    permutationH :: Int -> Handler LBS.ByteString
+    permutationH :: Int -> Handler SvgGraph
     permutationH permAsInt =
       withPermutation permAsInt servePermutation
-    permutationPowerH :: Int -> Int -> Handler LBS.ByteString
+    permutationPowerH :: Int -> Int -> Handler SvgGraph
     permutationPowerH permAsInt power =
       withPermutation permAsInt (servePermutation . multiplyMany . replicate power)
-    permTreeH :: Int -> Handler LBS.ByteString
+    permTreeH :: Int -> Handler SvgGraph
     permTreeH n
       | 1 <= n && n <= 4 = do
         let allPerms = concatMap show <$> List.permutations [1 .. n]
@@ -88,23 +91,23 @@ permStrToEdges str =
     xs = rd <$> List.inits str
     rd = fromMaybe 0 . readMaybe
 
-withPermutation :: Int -> (Permutation -> Handler LBS.ByteString) -> Handler LBS.ByteString
+withPermutation :: Int -> (Permutation -> Handler SvgGraph) -> Handler SvgGraph
 withPermutation permAsInt respond = do
   let digits = map digitToInt $ show permAsInt
   case maybePermutation digits of
     Just perm -> respond perm
     Nothing -> throwError $ err400 {errBody = "Not a permutation"}
 
-servePermutation :: Permutation -> Handler LBS.ByteString
+servePermutation :: Permutation -> Handler SvgGraph
 servePermutation =
   renderGraphFromEdges Circo . Array.assocs . permutationArray
 
-renderGraphFromEdges :: GraphvizEngine -> [(Int, Int)] -> Handler LBS.ByteString
+renderGraphFromEdges :: GraphvizEngine -> [(Int, Int)] -> Handler SvgGraph
 renderGraphFromEdges engine edges = do
   let dotLines = fmap renderEdge edges
   liftIO $ LBS.writeFile "tmp.dot" $ LBS.intercalate ";" $ "digraph {node[shape=circle]" : dotLines <> ["}"]
   (_, graphSVG) <- Turtle.Bytes.shellStrict (showEngine engine <> " tmp.dot -Tsvg") empty
-  pure $ LBS.fromStrict graphSVG
+  pure $ SvgGraph graphSVG
 
 renderEdge :: (Int, Int) -> LBS.ByteString
 renderEdge (i, j) =
@@ -125,5 +128,5 @@ data SVG
 instance Servant.API.Accept SVG where
   contentType _ = "image" // "svg+xml"
 
-instance MimeRender SVG LBS.ByteString where
-  mimeRender _ = id
+instance MimeRender SVG SvgGraph where
+  mimeRender _ (SvgGraph bs) = LBS.fromStrict bs
