@@ -104,24 +104,29 @@ servePermutation =
 
 renderGraphFromEdges :: GraphvizEngine -> [(Int, Int)] -> Handler SvgGraph
 renderGraphFromEdges engine edges = do
-  let dotLines = fmap renderEdge edges
-  liftIO $ LBS.writeFile "tmp.dot" $ LBS.intercalate ";" $ "digraph {node[shape=circle]" : dotLines <> ["}"]
-  (_, graphSVG) <- Turtle.Bytes.shellStrict (showEngine engine <> " tmp.dot -Tsvg") empty
-  pure $ SvgGraph graphSVG
+  let dotLines = foldMap renderEdge edges
+      dotContent =
+        LBS.toStrict
+          $ Builder.toLazyByteString
+          $ Builder.string7 "digraph{node[shape=circle];" <> dotLines <> Builder.char8 '}'
+  (exitCode, graphSVG) <- Turtle.Bytes.procStrict (engineCommand engine) ["-Tsvg"] (pure dotContent)
+  case exitCode of
+    ExitSuccess -> pure $ SvgGraph graphSVG
+    ExitFailure _ -> throwError $ err500 {errBody = "Failed to generate svg image."}
 
-renderEdge :: (Int, Int) -> LBS.ByteString
+renderEdge :: (Int, Int) -> Builder.Builder
 renderEdge (i, j) =
-  Builder.toLazyByteString $
-    Builder.intDec i
-      <> Builder.char8 '-'
-      <> Builder.char8 '>'
-      <> Builder.intDec j
+  Builder.intDec i
+    <> Builder.char8 '-'
+    <> Builder.char8 '>'
+    <> Builder.intDec j
+    <> Builder.char8 ';'
 
 data GraphvizEngine = Dot | Circo
 
-showEngine :: GraphvizEngine -> Text
-showEngine Dot = "dot"
-showEngine Circo = "circo"
+engineCommand :: GraphvizEngine -> Text
+engineCommand Dot = "dot"
+engineCommand Circo = "circo"
 
 data SVG
 
