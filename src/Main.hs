@@ -104,8 +104,12 @@ renderGraphFromEdges engine edges = do
       dotContent =
         LBS.toStrict
           $ Builder.toLazyByteString
-          $ Builder.string7 "digraph{node[shape=circle fixedsize=true];" <> dotLines <> Builder.char8 '}'
-  (exitCode, graphSVG) <- Turtle.Bytes.procStrict (engineCommand engine) ["-Tsvg"] (pure dotContent)
+          $ Builder.string7 "digraph{" <> dotLines <> Builder.char8 '}'
+  (exitCode, graphSVG) <-
+    Turtle.Bytes.procStrict
+      (engineCommand engine)
+      ["-Tsvg", "-Nshape=circle", "-Nfixedsize=true"]
+      (pure dotContent)
   case exitCode of
     ExitSuccess -> pure $ SvgGraph graphSVG
     ExitFailure _ -> throwError $ err500 {errBody = "Failed to generate svg image."}
