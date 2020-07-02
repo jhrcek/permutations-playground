@@ -1,15 +1,22 @@
-cabal-version:      >=1.10
+cabal-version:      3.0
 name:               permutation-playground
 version:            0.1.0.0
-license:            BSD3
+license:            BSD-3-Clause
 license-file:       LICENSE
 copyright:          2020 Jan Hrček
-maintainer:         example@example.com
+maintainer:         honza.hrk@gmail.com
 author:             Jan Hrček
 homepage:           https://github.com/githubuser/permutation-playground#readme
+synopsis:
+    A simple web app to generate permutation images using graphviz
+
 category:           Web
 build-type:         Simple
 extra-source-files: README.md
+
+source-repository head
+    type:     git
+    location: git@github.com/jhrcek/permutations-playground.git
 
 executable permutation-playground
     main-is:          Main.hs
