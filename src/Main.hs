@@ -15,14 +15,16 @@ import qualified Turtle.Bytes
 
 import Data.ByteString (ByteString)
 import Data.Char (digitToInt)
+import Data.Containers.ListUtils (nubOrd)
 import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (..))
 import Math.Combinat.Permutations (Permutation, maybePermutation, multiplyMany, permutationArray, randomPermutation)
 import Network.HTTP.Media ((//))
+import Network.Wai.Handler.Warp (Port)
 import Servant (Accept, Application, Capture, Get, Handler, MimeRender, Server, contentType, err400, err500, errBody, mimeRender, serve, throwError, (:<|>) (..), (:>))
 import System.Random (newStdGen)
 import Text.Read (readMaybe)
-import Turtle
+import Turtle hiding (d, x)
 
 
 main :: IO ()
@@ -31,11 +33,12 @@ main = do
         unlines $
             "Endpoints" :
             fmap
-                ("http://localhost:8080/" <>)
+                (\path -> "http://localhost:" <> show appPort <> "/" <> path)
                 [ "permutation/random/10"
                 , "permutation/2341"
                 , "permutation/2341/power/2"
                 , "permtree/3"
+                , "euclid-algo/168/188"
                 ]
     Warp.runSettings settings app
 
@@ -44,7 +47,11 @@ settings :: Warp.Settings
 settings =
     Warp.defaultSettings
         & Warp.setTimeout 5
-        & Warp.setPort 8080
+        & Warp.setPort appPort
+
+
+appPort :: Port
+appPort = 8080
 
 
 app :: Application
@@ -89,12 +96,15 @@ server =
     permTreeH n
         | 1 <= n && n <= 4 = do
             let allPerms = concatMap show <$> List.permutations [1 .. n]
-                edges = List.nub . List.sort $ concatMap permStrToEdges allPerms
-            renderGraphFromEdges Dot edges
+                edges = nubOrd . List.sort $ concatMap permStrToEdges allPerms
+                dotSrc = renderPermutation edges
+            serveDot Dot ["-Tsvg", "-Nshape=circle", "-Nfixedsize=true"] dotSrc
         | otherwise = throwError $ err400{errBody = "Out of range [1 .. 4]"}
 
     euclidAlgoH :: Int -> Int -> Handler SvgGraph
-    euclidAlgoH a b = throwError $ err400{errBody = "Not implemented yet"}
+    euclidAlgoH a b =
+        let dotSrc = renderEuclidStepsGraph a b
+         in serveDot Dot ["-Tsvg", "-Nshape=circle", "-Nfixedsize=true", "-Grankdir=BT"] dotSrc
 
 
 permStrToEdges :: String -> [(Int, Int)]
@@ -114,25 +124,26 @@ withPermutation permAsInt respond = do
 
 
 servePermutation :: Permutation -> Handler SvgGraph
-servePermutation =
-    renderGraphFromEdges Circo . Array.assocs . permutationArray
+servePermutation perm = do
+    let dotSrc = renderPermutation $ Array.assocs $ permutationArray perm
+    serveDot Circo ["-Tsvg", "-Nshape=circle", "-Nfixedsize=true"] dotSrc
 
 
-renderGraphFromEdges :: GraphvizEngine -> [(Int, Int)] -> Handler SvgGraph
-renderGraphFromEdges engine edges = do
-    let dotLines = foldMap renderEdge edges
-        dotContent =
-            LBS.toStrict $
-                Builder.toLazyByteString $
-                    Builder.string7 "digraph{" <> dotLines <> Builder.char8 '}'
-    (exitCode, graphSVG) <-
-        Turtle.Bytes.procStrict
-            (engineCommand engine)
-            ["-Tsvg", "-Nshape=circle", "-Nfixedsize=true"]
-            (pure dotContent)
+serveDot :: GraphvizEngine -> [Text] -> DotSource -> Handler SvgGraph
+serveDot engine gvParams (DotSource dotSrc) = do
+    (exitCode, graphSVG) <- Turtle.Bytes.procStrict (engineCommand engine) gvParams $ pure dotSrc
     case exitCode of
         ExitSuccess -> pure $ SvgGraph graphSVG
         ExitFailure _ -> throwError $ err500{errBody = "Failed to generate svg image."}
+
+
+renderPermutation :: [(Int, Int)] -> DotSource
+renderPermutation edges =
+    let dotLines = foldMap renderEdge edges
+     in DotSource $
+            LBS.toStrict $
+                Builder.toLazyByteString $
+                    Builder.string7 "digraph{" <> dotLines <> Builder.char8 '}'
 
 
 renderEdge :: (Int, Int) -> Builder.Builder
@@ -142,6 +153,54 @@ renderEdge (i, j) =
         <> Builder.char8 '>'
         <> Builder.intDec j
         <> Builder.char8 ';'
+
+
+renderEdgeNoConstraint :: (Int, Int) -> Builder.Builder
+renderEdgeNoConstraint (i, j) =
+    Builder.intDec i
+        <> Builder.char8 '-'
+        <> Builder.char8 '>'
+        <> Builder.intDec j
+        <> Builder.string8 "[constraint=false,color=red];"
+
+
+euclidSteps :: Int -> Int -> [Int]
+euclidSteps a b
+    | a >= b = a : b : go a b
+    | otherwise = b : a : go b a
+  where
+    go x y
+        | r == 0 = []
+        | otherwise = r : go y r
+      where
+        r = mod x y
+
+
+renderEuclidStepsGraph :: Int -> Int -> DotSource
+renderEuclidStepsGraph a b =
+    let steps = euclidSteps a b
+        allDivisors = nubOrd $ List.sort $ concatMap (\x -> filter (\d -> mod x d == 0) [1 .. x]) steps
+        edges =
+            [ (x, y)
+            | x <- allDivisors
+            , y <- allDivisors
+            , x < y
+            , mod y x == 0
+            , -- TODO this is naive transitive reduction.
+            -- But doing it by graphviz's `tread`, we run into
+            -- cycles generated by renderEdgeNoConstraint below
+            null [z | z <- allDivisors, x < z, z < y, mod y z == 0, mod z x == 0]
+            ]
+        dotLines =
+            foldMap renderEdge edges
+                <> foldMap renderEdgeNoConstraint (zip steps (tail steps))
+     in DotSource $
+            LBS.toStrict $
+                Builder.toLazyByteString $
+                    Builder.string7 "digraph{" <> dotLines <> Builder.char8 '}'
+
+
+newtype DotSource = DotSource ByteString
 
 
 data GraphvizEngine = Dot | Circo
