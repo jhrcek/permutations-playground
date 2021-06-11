@@ -18,7 +18,7 @@ import Data.Char (digitToInt)
 import Data.Containers.ListUtils (nubOrd)
 import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (..))
-import Math.Combinat.Permutations (Permutation, maybePermutation, multiplyMany, permutationArray, randomPermutation)
+import Math.Combinat.Permutations (Permutation, maybePermutation, permutationArray, productOfPermutations, randomPermutation)
 import Network.HTTP.Media ((//))
 import Network.Wai.Handler.Warp (Port)
 import Servant (Accept, Application, Capture, Get, Handler, MimeRender, Server, contentType, err400, err500, errBody, mimeRender, serve, throwError, (:<|>) (..), (:>))
@@ -90,7 +90,7 @@ server =
 
     permutationPowerH :: Int -> Int -> Handler SvgGraph
     permutationPowerH permAsInt power =
-        withPermutation permAsInt (servePermutation . multiplyMany . replicate power)
+        withPermutation permAsInt (servePermutation . productOfPermutations . replicate power)
 
     permTreeH :: Int -> Handler SvgGraph
     permTreeH n

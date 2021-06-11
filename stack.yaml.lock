@@ -5,15 +5,22 @@
 
 packages:
 - completed:
-    hackage: combinat-0.2.9.0@sha256:3daed23a2376f8d9903dc2c1c3758f1f2a0527178c81023080507e5f5ddf5b7a,5107
+    hackage: combinat-0.2.10.0@sha256:adc1dbb532b048e419374e9e89dc4f92c47758300ffe8534a54849266706e53b,5318
     pantry-tree:
-      size: 4818
-      sha256: 7c14bb4cc6cb0b2d6f14ae8265241966fe6c2e07827d18acad8de1bdc1ba8540
+      size: 4964
+      sha256: 3633e40972d9b3bc12ae75fdeadff558d5bf8293f592245db8bfdbff8c9e22be
   original:
-    hackage: combinat-0.2.9.0@sha256:3daed23a2376f8d9903dc2c1c3758f1f2a0527178c81023080507e5f5ddf5b7a,5107
+    hackage: combinat-0.2.10.0@sha256:adc1dbb532b048e419374e9e89dc4f92c47758300ffe8534a54849266706e53b,5318
+- completed:
+    hackage: compact-word-vectors-0.2.0.2@sha256:e46c7c3186dafe1ae22434556ddec91af022f2360c57c30a46397758938f3acc,2617
+    pantry-tree:
+      size: 744
+      sha256: 04bb169017c6d066518c6b90938839cf0f1b3352188a4800ffe7b04d79cb2b99
+  original:
+    hackage: compact-word-vectors-0.2.0.2@sha256:e46c7c3186dafe1ae22434556ddec91af022f2360c57c30a46397758938f3acc,2617
 snapshots:
 - completed:
-    size: 567037
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/9.yaml
-    sha256: d7d8d5106e53d1669964bd8bd2b0f88a5ad192d772f5376384b76738fd992311
-  original: lts-17.9
+    size: 567679
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/15.yaml
+    sha256: 72e87841a0ab5b72f6f018e8ee692fd972b7bb32a944990f028e10d6eb528e63
+  original: lts-17.15

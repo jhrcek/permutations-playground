@@ -1,5 +1,7 @@
-resolver: lts-17.9
+resolver: lts-17.15
 packages:
   - .
 extra-deps:
-  - combinat-0.2.9.0@sha256:3daed23a2376f8d9903dc2c1c3758f1f2a0527178c81023080507e5f5ddf5b7a,5107
+  - combinat-0.2.10.0@sha256:adc1dbb532b048e419374e9e89dc4f92c47758300ffe8534a54849266706e53b,5318
+  - compact-word-vectors-0.2.0.2@sha256:e46c7c3186dafe1ae22434556ddec91af022f2360c57c30a46397758938f3acc,2617
+
