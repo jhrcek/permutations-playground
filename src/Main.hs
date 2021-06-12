@@ -220,3 +220,21 @@ instance Accept SVG where
 
 instance MimeRender SVG SvgGraph where
     mimeRender _ (SvgGraph bs) = LBS.fromStrict bs
+
+
+-- Steinhaus' algorithm from "Adventures in Group Theory: Rubik's Cube, Merlin's Machine and Other Mathematical Toys"
+-- Generates list of all permutations for given n.
+-- Identity is first and each of the next permutations can be optained from previous by composing with a transposition.
+steinhaus :: Int -> [[Int]]
+steinhaus n
+    | n <= 0 = [[]]
+    | otherwise = inserts False n $ steinhaus (n - 1)
+  where
+    inserts :: Bool -> Int -> [[Int]] -> [[Int]]
+    inserts _ _ [] = []
+    inserts True x (p : ps) = ins x p <> inserts False x ps
+    inserts False x (p : ps) = reverse (ins x p) <> inserts True x ps
+
+    ins :: Int -> [Int] -> [[Int]]
+    ins x [] = [[x]]
+    ins x (y : ys) = (x : y : ys) : fmap (y :) (ins x ys)
