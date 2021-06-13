@@ -36,6 +36,7 @@ type alias Model =
     { movingCircle : Maybe Point
     , circle : Point
     , permutations : List Permutation
+    , n : Int
     , circleRadius : Float
     }
 
@@ -50,8 +51,12 @@ init : () -> ( Model, Cmd Msg )
 init () =
     ( { movingCircle = Nothing
       , circle = ( 100, 100 )
-      , permutations = []
-      , circleRadius = 20
+      , permutations =
+            [ identityPermutation 4
+            , identityPermutation 4
+            ]
+      , n = 4
+      , circleRadius = 15
       }
     , Cmd.none
     )
@@ -88,40 +93,110 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { circle, movingCircle, circleRadius, permutations } =
+view { circle, movingCircle, circleRadius, permutations, n } =
     Html.div []
         [ Canvas.toHtml ( w, h )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
             , Mouse.onUp (.offsetPos >> EndAt)
             ]
-            [ Canvas.clear ( 0, 0 ) w h
-            , Canvas.shapes
-                [ fill Color.white, stroke Color.black ]
-                [ Canvas.path (Maybe.withDefault circle movingCircle)
-                    [ Canvas.lineTo ( 200, 400 ), Canvas.lineTo ( 400, 200 ) ]
-                ]
-            , Canvas.shapes
-                [ fill Color.white, stroke Color.black ]
-                [ Canvas.circle (Maybe.withDefault circle movingCircle) circleRadius
-                , Canvas.circle ( 100, 200 ) circleRadius
-                , Canvas.circle ( 100, 300 ) circleRadius
-                , Canvas.circle ( 100, 400 ) circleRadius
-                ]
-            , textAt (Maybe.withDefault circle movingCircle) "1"
-            , textAt ( 100, 200 ) "2"
-            , textAt ( 100, 300 ) "3"
-            , textAt ( 100, 400 ) "4"
-            ]
+            (Canvas.clear ( 0, 0 ) w h
+                :: permutationLines n permutations
+                :: permutationCircles n circleRadius permutations
+                :: permutationTexts n permutations
+            )
         , Html.div []
             []
         ]
 
 
+permutationLines : Int -> List Permutation -> Renderable
+permutationLines n permutations =
+    Canvas.shapes
+        [ fill Color.white, stroke Color.black ]
+        (List.map
+            (\i ->
+                Canvas.path ( paddingX, paddingY + x1x2Dist * toFloat i )
+                    (List.foldl
+                        (\(Permutation p) ( curX, curXDim, moves ) ->
+                            let
+                                nextX =
+                                    Maybe.withDefault 0 (Array.get curX p)
+                            in
+                            ( nextX
+                            , curXDim + domCodDist
+                            , moves ++ [ Canvas.lineTo ( curXDim, paddingY + x1x2Dist * toFloat nextX ) ]
+                            )
+                        )
+                        ( i, paddingX + domCodDist, [] )
+                        permutations
+                        |> (\( _, _, moves ) -> moves)
+                    )
+            )
+            (List.range 0 (n - 1))
+        )
+
+
+permutationCircles : Int -> Float -> List Permutation -> Renderable
+permutationCircles n circleRadius permutations =
+    Canvas.shapes
+        [ fill Color.white, stroke Color.black ]
+        (List.range 0 (List.length permutations)
+            |> List.concatMap
+                (\colIdx ->
+                    List.range 0 (n - 1)
+                        |> List.map
+                            (\rowIdx ->
+                                Canvas.circle
+                                    ( paddingX + toFloat colIdx * domCodDist
+                                    , paddingY + toFloat rowIdx * x1x2Dist
+                                    )
+                                    circleRadius
+                            )
+                )
+        )
+
+
+permutationTexts : Int -> List Permutation -> List Renderable
+permutationTexts n permutations =
+    List.range 0 (List.length permutations)
+        |> List.concatMap
+            (\col ->
+                List.range 0 (n - 1)
+                    |> List.map
+                        (\row ->
+                            textAt
+                                ( paddingX + toFloat col * domCodDist
+                                , paddingY + toFloat row * x1x2Dist
+                                )
+                                (String.fromInt (col + 1))
+                        )
+            )
+
+
+x1x2Dist =
+    100
+
+
+paddingX =
+    100
+
+
+paddingY =
+    100
+
+
+domCodDist =
+    100
+
+
 textAt : Point -> String -> Renderable
 textAt =
     Canvas.text
-        [ font { size = 16, family = "sans-serif" }, align Center, baseLine Middle ]
+        [ font { size = 16, family = "sans-serif" }
+        , align Center
+        , baseLine Middle
+        ]
 
 
 pointDistance : Point -> Point -> Float
@@ -142,6 +217,11 @@ type Permutation
     = Permutation (Array Int)
 
 
+identityPermutation : Int -> Permutation
+identityPermutation n =
+    Permutation (Array.fromList (List.range 0 (n - 1)))
+
+
 
 -- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
@@ -155,3 +235,4 @@ type Permutation
 -- that is given 1) a ; p = b find c such that p ; c = b
 --               2) p ; a = b find c such taht c ; p = b
 -- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
+-- TODO add ability to generate random permutation in each spot
