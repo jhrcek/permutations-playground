@@ -88,7 +88,7 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { circle, movingCircle, circleRadius } =
+view { circle, movingCircle, circleRadius, permutations } =
     Html.div []
         [ Canvas.toHtml ( w, h )
             [ Mouse.onDown (.offsetPos >> StartAt)
@@ -138,5 +138,20 @@ getCircleAt p { circle, circleRadius } =
         Nothing
 
 
-type alias Permutation =
-    Array Int
+type Permutation
+    = Permutation (Array Int)
+
+
+
+-- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
+-- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
+-- TODO add showCycles : Permutation -> String
+-- TODO add a way to edit view params (circle radius, domain-codomain distance, x1-x2 distance, x/y padding(?))
+-- TODO add a way to increase/decrease the number of perms being displayed
+-- TODO add a way to increase/decrease n in Sn
+-- TODO add a way to edit permutation independently of others
+-- TODO add a way to edit permutation without altering composition
+-- TODO add a way to move given permutation left-right within composition without altering the composition
+-- that is given 1) a ; p = b find c such that p ; c = b
+--               2) p ; a = b find c such taht c ; p = b
+-- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
