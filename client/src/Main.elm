@@ -46,6 +46,8 @@ type Msg
     | SetPaddingX Float
     | SetPaddingY Float
     | SetN Int
+    | AddLastPermutation
+    | RemoveLastPermutation
     | NoOp
 
 
@@ -142,6 +144,12 @@ update msg model =
         SetN newN ->
             { model | n = newN, permutations = List.map (\_ -> identityPermutation newN) model.permutations }
 
+        AddLastPermutation ->
+            { model | permutations = model.permutations ++ [ identityPermutation model.n ] }
+
+        RemoveLastPermutation ->
+            { model | permutations = List.take (List.length model.permutations - 1) model.permutations }
+
         NoOp ->
             model
     , Cmd.none
@@ -187,7 +195,7 @@ imageConfigControls canvasImage n =
                 [ Html.text "horizontal"
                 , Html.input
                     [ HA.type_ "range"
-                    , HA.min "50"
+                    , HA.min "20"
                     , HA.max "200"
                     , HA.value (String.fromInt canvasImage.horizontalDist)
                     , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetHorizontalDist << String.toInt)
@@ -200,7 +208,7 @@ imageConfigControls canvasImage n =
                 [ Html.text "vertical"
                 , Html.input
                     [ HA.type_ "range"
-                    , HA.min "50"
+                    , HA.min "20"
                     , HA.max "200"
                     , HA.value (String.fromInt canvasImage.verticalDist)
                     , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetVerticalDist << String.toInt)
@@ -213,7 +221,7 @@ imageConfigControls canvasImage n =
                 [ Html.text "radius"
                 , Html.input
                     [ HA.type_ "range"
-                    , HA.min "5"
+                    , HA.min "10"
                     , HA.max "50"
                     , HA.value (String.fromFloat canvasImage.circleRadius)
                     , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetCircleRadius << String.toFloat)
@@ -252,6 +260,10 @@ imageConfigControls canvasImage n =
             , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n - 1 ] [ Html.text "-1" ]
             , Html.text (" " ++ String.fromInt n ++ " ")
             , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n + 1 ] [ Html.text "+1" ]
+            ]
+        , Html.div []
+            [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove perm" ]
+            , Html.button [ HE.onClick AddLastPermutation ] [ Html.text "Add perm" ]
             ]
         ]
 
@@ -315,7 +327,7 @@ permutationTexts ci n permutations =
                                 ( ci.paddingX + toFloat (col * ci.horizontalDist)
                                 , ci.paddingY + toFloat (row * ci.verticalDist)
                                 )
-                                (String.fromInt (col + 1))
+                                (String.fromInt (row + 1))
                         )
             )
 
@@ -361,7 +373,6 @@ subscriptions _ =
 -- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
 -- TODO add showCycles : Permutation -> String
--- TODO add a way to increase/decrease the number of perms being displayed
 -- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
 -- TODO add a way to move given permutation left-right within composition without altering the composition
