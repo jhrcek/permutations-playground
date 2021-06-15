@@ -12,13 +12,14 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Html.Events.Extra.Mouse as Mouse
+import Permutation exposing (Permutation(..))
 import Task
 
 
 main : Program () Model Msg
 main =
     Browser.element
-        { init = init
+        { init = init 3
         , update = update
         , subscriptions = subscriptions
         , view = view
@@ -76,17 +77,16 @@ defaultImage =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init () =
+init : Int -> () -> ( Model, Cmd Msg )
+init n () =
     ( { movingCircle = Nothing
       , circle = ( 100, 100 )
       , permutations =
-            [ identityPermutation 4
-            , identityPermutation 4
-            , identityPermutation 4
-            , identityPermutation 4
+            [ Permutation (Array.fromList [ 1, 2, 0 ])
+            , Permutation (Array.fromList [ 2, 0, 1 ])
+            , Permutation.identity n
             ]
-      , n = 4
+      , n = n
       , viewPort = { width = 1024, height = 768 }
       , canvasImage = defaultImage
       }
@@ -142,10 +142,10 @@ update msg model =
             updateImage (\image -> { image | paddingY = newPaddingY }) model
 
         SetN newN ->
-            { model | n = newN, permutations = List.map (\_ -> identityPermutation newN) model.permutations }
+            { model | n = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
 
         AddLastPermutation ->
-            { model | permutations = model.permutations ++ [ identityPermutation model.n ] }
+            { model | permutations = model.permutations ++ [ Permutation.identity model.n ] }
 
         RemoveLastPermutation ->
             { model | permutations = List.take (List.length model.permutations - 1) model.permutations }
@@ -172,7 +172,7 @@ view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage n
+        [ imageConfigControls canvasImage n permutations
         , Canvas.toHtml ( viewPort.width - 300, viewPort.height )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
@@ -186,8 +186,8 @@ view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
         ]
 
 
-imageConfigControls : CanvasImage -> Int -> Html Msg
-imageConfigControls canvasImage n =
+imageConfigControls : CanvasImage -> Int -> List Permutation -> Html Msg
+imageConfigControls canvasImage n permutations =
     Html.div []
         [ Html.h3 [] [ Html.text "Controls" ]
         , Html.div []
@@ -265,6 +265,10 @@ imageConfigControls canvasImage n =
             [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove perm" ]
             , Html.button [ HE.onClick AddLastPermutation ] [ Html.text "Add perm" ]
             ]
+        , Html.div [] <|
+            List.map
+                (\p -> Html.div [] [ Html.text <| Permutation.showCycles p ])
+                permutations
         ]
 
 
@@ -355,15 +359,6 @@ getCircleAt p { circle, canvasImage } =
         Nothing
 
 
-type Permutation
-    = Permutation (Array Int)
-
-
-identityPermutation : Int -> Permutation
-identityPermutation n =
-    Permutation (Array.fromList (List.range 0 (n - 1)))
-
-
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Browser.Events.onResize (\w h -> GotViewport { width = w, height = h })
@@ -372,9 +367,9 @@ subscriptions _ =
 
 -- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
--- TODO add showCycles : Permutation -> String
 -- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
+-- TODO add a way to remove selected perm
 -- TODO add a way to move given permutation left-right within composition without altering the composition
 -- that is given 1) a ; p = b find c such that p ; c = b
 --               2) p ; a = b find c such that c ; p = b
