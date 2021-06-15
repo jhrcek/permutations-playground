@@ -2,12 +2,17 @@ module Main exposing (main)
 
 import Array exposing (Array)
 import Browser
+import Browser.Dom exposing (getViewport)
+import Browser.Events
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
 import Color exposing (Color)
 import Html exposing (Html)
+import Html.Attributes as HA
+import Html.Events as HE
 import Html.Events.Extra.Mouse as Mouse
+import Task
 
 
 main : Program () Model Msg
@@ -15,21 +20,9 @@ main =
     Browser.element
         { init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         , view = view
         }
-
-
-{-| TODO make this fullscreen-ish and dynamic on window resize
--}
-h : number
-h =
-    900
-
-
-w : number
-w =
-    900
 
 
 type alias Model =
@@ -37,7 +30,8 @@ type alias Model =
     , circle : Point
     , permutations : List Permutation
     , n : Int
-    , circleRadius : Float
+    , viewPort : ViewPort
+    , canvasImage : CanvasImage
     }
 
 
@@ -45,6 +39,38 @@ type Msg
     = StartAt Point
     | MoveAt Point
     | EndAt Point
+    | GotViewport ViewPort
+    | SetHorizontalDist Int
+    | SetVerticalDist Int
+    | SetCircleRadius Float
+    | SetPaddingX Float
+    | SetPaddingY Float
+    | NoOp
+
+
+type alias ViewPort =
+    { width : Int
+    , height : Int
+    }
+
+
+type alias CanvasImage =
+    { horizontalDist : Int
+    , verticalDist : Int
+    , circleRadius : Float
+    , paddingX : Float
+    , paddingY : Float
+    }
+
+
+defaultImage : CanvasImage
+defaultImage =
+    { horizontalDist = 100
+    , verticalDist = 100
+    , circleRadius = 15
+    , paddingX = 100
+    , paddingY = 100
+    }
 
 
 init : () -> ( Model, Cmd Msg )
@@ -54,11 +80,21 @@ init () =
       , permutations =
             [ identityPermutation 4
             , identityPermutation 4
+            , identityPermutation 4
+            , identityPermutation 4
             ]
       , n = 4
-      , circleRadius = 15
+      , viewPort = { width = 1024, height = 768 }
+      , canvasImage = defaultImage
       }
-    , Cmd.none
+    , Task.perform
+        (\vp ->
+            GotViewport
+                { width = round vp.viewport.width
+                , height = round vp.viewport.height
+                }
+        )
+        getViewport
     )
 
 
@@ -83,8 +119,34 @@ update msg model =
 
                 Nothing ->
                     model
+
+        GotViewport viewPort ->
+            { model | viewPort = viewPort }
+
+        SetHorizontalDist newDomCodDist ->
+            updateImage (\image -> { image | horizontalDist = newDomCodDist }) model
+
+        SetVerticalDist newVerticalDist ->
+            updateImage (\image -> { image | verticalDist = newVerticalDist }) model
+
+        SetCircleRadius newCircleRadius ->
+            updateImage (\image -> { image | circleRadius = newCircleRadius }) model
+
+        SetPaddingX newPaddingX ->
+            updateImage (\image -> { image | paddingX = newPaddingX }) model
+
+        SetPaddingY newPaddingY ->
+            updateImage (\image -> { image | paddingY = newPaddingY }) model
+
+        NoOp ->
+            model
     , Cmd.none
     )
+
+
+updateImage : (CanvasImage -> CanvasImage) -> Model -> Model
+updateImage f model =
+    { model | canvasImage = f model.canvasImage }
 
 
 roundToNearest100 : Float -> Float
@@ -93,30 +155,104 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { circle, movingCircle, circleRadius, permutations, n } =
-    Html.div []
-        [ Canvas.toHtml ( w, h )
+view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
+    Html.div
+        [ HA.style "display" "grid"
+        , HA.style "grid-template-columns" "300px auto"
+        ]
+        [ imageConfigControls canvasImage
+        , Canvas.toHtml ( viewPort.width - 300, viewPort.height )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
             , Mouse.onUp (.offsetPos >> EndAt)
             ]
-            (Canvas.clear ( 0, 0 ) w h
-                :: permutationLines n permutations
-                :: permutationCircles n circleRadius permutations
-                :: permutationTexts n permutations
+            (Canvas.clear ( 0, 0 ) (toFloat viewPort.width) (toFloat viewPort.height)
+                :: permutationLines canvasImage n permutations
+                :: permutationCircles canvasImage n permutations
+                :: permutationTexts canvasImage n permutations
             )
-        , Html.div []
-            []
         ]
 
 
-permutationLines : Int -> List Permutation -> Renderable
-permutationLines n permutations =
+imageConfigControls : CanvasImage -> Html Msg
+imageConfigControls canvasImage =
+    Html.div []
+        [ Html.h3 [] [ Html.text "Controls" ]
+        , Html.div []
+            [ Html.label []
+                [ Html.text "horizontal"
+                , Html.input
+                    [ HA.type_ "range"
+                    , HA.min "50"
+                    , HA.max "200"
+                    , HA.value (String.fromInt canvasImage.horizontalDist)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetHorizontalDist << String.toInt)
+                    ]
+                    []
+                ]
+            ]
+        , Html.div []
+            [ Html.label []
+                [ Html.text "vertical"
+                , Html.input
+                    [ HA.type_ "range"
+                    , HA.min "50"
+                    , HA.max "200"
+                    , HA.value (String.fromInt canvasImage.verticalDist)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetVerticalDist << String.toInt)
+                    ]
+                    []
+                ]
+            ]
+        , Html.div []
+            [ Html.label []
+                [ Html.text "radius"
+                , Html.input
+                    [ HA.type_ "range"
+                    , HA.min "5"
+                    , HA.max "50"
+                    , HA.value (String.fromFloat canvasImage.circleRadius)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetCircleRadius << String.toFloat)
+                    ]
+                    []
+                ]
+            ]
+        , Html.div []
+            [ Html.label []
+                [ Html.text "padding X"
+                , Html.input
+                    [ HA.type_ "range"
+                    , HA.min "10"
+                    , HA.max "200"
+                    , HA.value (String.fromFloat canvasImage.paddingX)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetPaddingX << String.toFloat)
+                    ]
+                    []
+                ]
+            ]
+        , Html.div []
+            [ Html.label []
+                [ Html.text "padding Y"
+                , Html.input
+                    [ HA.type_ "range"
+                    , HA.min "10"
+                    , HA.max "200"
+                    , HA.value (String.fromFloat canvasImage.paddingY)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map SetPaddingY << String.toFloat)
+                    ]
+                    []
+                ]
+            ]
+        ]
+
+
+permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
+permutationLines ci n permutations =
     Canvas.shapes
         [ fill Color.white, stroke Color.black ]
         (List.map
             (\i ->
-                Canvas.path ( paddingX, paddingY + x1x2Dist * toFloat i )
+                Canvas.path ( ci.paddingX, ci.paddingY + toFloat (ci.verticalDist * i) )
                     (List.foldl
                         (\(Permutation p) ( curX, curXDim, moves ) ->
                             let
@@ -124,11 +260,11 @@ permutationLines n permutations =
                                     Maybe.withDefault 0 (Array.get curX p)
                             in
                             ( nextX
-                            , curXDim + domCodDist
-                            , moves ++ [ Canvas.lineTo ( curXDim, paddingY + x1x2Dist * toFloat nextX ) ]
+                            , curXDim + ci.horizontalDist
+                            , moves ++ [ Canvas.lineTo ( toFloat curXDim, toFloat (round ci.paddingY + ci.verticalDist * nextX) ) ]
                             )
                         )
-                        ( i, paddingX + domCodDist, [] )
+                        ( i, round ci.paddingX + ci.horizontalDist, [] )
                         permutations
                         |> (\( _, _, moves ) -> moves)
                     )
@@ -137,8 +273,8 @@ permutationLines n permutations =
         )
 
 
-permutationCircles : Int -> Float -> List Permutation -> Renderable
-permutationCircles n circleRadius permutations =
+permutationCircles : CanvasImage -> Int -> List Permutation -> Renderable
+permutationCircles ci n permutations =
     Canvas.shapes
         [ fill Color.white, stroke Color.black ]
         (List.range 0 (List.length permutations)
@@ -148,17 +284,17 @@ permutationCircles n circleRadius permutations =
                         |> List.map
                             (\rowIdx ->
                                 Canvas.circle
-                                    ( paddingX + toFloat colIdx * domCodDist
-                                    , paddingY + toFloat rowIdx * x1x2Dist
+                                    ( ci.paddingX + toFloat (colIdx * ci.horizontalDist)
+                                    , ci.paddingY + toFloat (rowIdx * ci.verticalDist)
                                     )
-                                    circleRadius
+                                    ci.circleRadius
                             )
                 )
         )
 
 
-permutationTexts : Int -> List Permutation -> List Renderable
-permutationTexts n permutations =
+permutationTexts : CanvasImage -> Int -> List Permutation -> List Renderable
+permutationTexts ci n permutations =
     List.range 0 (List.length permutations)
         |> List.concatMap
             (\col ->
@@ -166,28 +302,12 @@ permutationTexts n permutations =
                     |> List.map
                         (\row ->
                             textAt
-                                ( paddingX + toFloat col * domCodDist
-                                , paddingY + toFloat row * x1x2Dist
+                                ( ci.paddingX + toFloat (col * ci.horizontalDist)
+                                , ci.paddingY + toFloat (row * ci.verticalDist)
                                 )
                                 (String.fromInt (col + 1))
                         )
             )
-
-
-x1x2Dist =
-    100
-
-
-paddingX =
-    100
-
-
-paddingY =
-    100
-
-
-domCodDist =
-    100
 
 
 textAt : Point -> String -> Renderable
@@ -205,8 +325,8 @@ pointDistance ( x1, y1 ) ( x2, y2 ) =
 
 
 getCircleAt : Point -> Model -> Maybe Point
-getCircleAt p { circle, circleRadius } =
-    if pointDistance circle p <= circleRadius then
+getCircleAt p { circle, canvasImage } =
+    if pointDistance circle p <= canvasImage.circleRadius then
         Just circle
 
     else
@@ -222,17 +342,21 @@ identityPermutation n =
     Permutation (Array.fromList (List.range 0 (n - 1)))
 
 
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Browser.Events.onResize (\w h -> GotViewport { width = w, height = h })
+
+
 
 -- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
 -- TODO add showCycles : Permutation -> String
--- TODO add a way to edit view params (circle radius, domain-codomain distance, x1-x2 distance, x/y padding(?))
 -- TODO add a way to increase/decrease the number of perms being displayed
 -- TODO add a way to increase/decrease n in Sn
 -- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
 -- TODO add a way to move given permutation left-right within composition without altering the composition
 -- that is given 1) a ; p = b find c such that p ; c = b
---               2) p ; a = b find c such taht c ; p = b
+--               2) p ; a = b find c such that c ; p = b
 -- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
 -- TODO add ability to generate random permutation in each spot
