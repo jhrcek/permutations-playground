@@ -45,6 +45,7 @@ type Msg
     | SetCircleRadius Float
     | SetPaddingX Float
     | SetPaddingY Float
+    | SetN Int
     | NoOp
 
 
@@ -138,6 +139,9 @@ update msg model =
         SetPaddingY newPaddingY ->
             updateImage (\image -> { image | paddingY = newPaddingY }) model
 
+        SetN newN ->
+            { model | n = newN, permutations = List.map (\_ -> identityPermutation newN) model.permutations }
+
         NoOp ->
             model
     , Cmd.none
@@ -160,7 +164,7 @@ view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage
+        [ imageConfigControls canvasImage n
         , Canvas.toHtml ( viewPort.width - 300, viewPort.height )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
@@ -174,8 +178,8 @@ view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
         ]
 
 
-imageConfigControls : CanvasImage -> Html Msg
-imageConfigControls canvasImage =
+imageConfigControls : CanvasImage -> Int -> Html Msg
+imageConfigControls canvasImage n =
     Html.div []
         [ Html.h3 [] [ Html.text "Controls" ]
         , Html.div []
@@ -242,6 +246,12 @@ imageConfigControls canvasImage =
                     ]
                     []
                 ]
+            ]
+        , Html.div []
+            [ Html.text "Set size "
+            , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n - 1 ] [ Html.text "-1" ]
+            , Html.text (" " ++ String.fromInt n ++ " ")
+            , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n + 1 ] [ Html.text "+1" ]
             ]
         ]
 
@@ -352,7 +362,6 @@ subscriptions _ =
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
 -- TODO add showCycles : Permutation -> String
 -- TODO add a way to increase/decrease the number of perms being displayed
--- TODO add a way to increase/decrease n in Sn
 -- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
 -- TODO add a way to move given permutation left-right within composition without altering the composition
