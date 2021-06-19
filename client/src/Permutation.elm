@@ -1,6 +1,8 @@
 module Permutation exposing
     ( Permutation(..)
+    , compose
     , generate
+    , generateMany
     , identity
     , showCycles
     , toCycles
@@ -8,7 +10,7 @@ module Permutation exposing
 
 import Array exposing (Array)
 import List.Extra as List
-import Random
+import Random exposing (Generator)
 import Random.List
 
 
@@ -37,7 +39,7 @@ showCycles p =
 
     else
         String.concat <|
-            List.map (\cyc -> "(" ++ String.join " " (List.map String.fromInt cyc) ++ ")") cs
+            List.map (\cyc -> "(" ++ String.join " " (List.map (String.fromInt << (+) 1) cyc) ++ ")") cs
 
 
 toCycles : Permutation -> List (List Int)
@@ -77,8 +79,32 @@ size (Permutation perm) =
     Array.length perm
 
 
+{-| composition from left to right
+p1 ; p2
+
+The result of `compose p1 p2` is a permutation which is like applying p1 followed by p2
+
+-}
+compose : Permutation -> Permutation -> Permutation
+compose (Permutation p1) (Permutation p2) =
+    Permutation (Array.map (\i -> Array.get i p2 |> Maybe.withDefault 0) p1)
+
+
+generateOne : Int -> Generator Permutation
+generateOne setSize =
+    List.range 0 (setSize - 1)
+        |> Random.List.shuffle
+        |> Random.map (Array.fromList >> Permutation)
+
+
 generate : Int -> Cmd Permutation
 generate n =
-    List.range 0 (n - 1)
-        |> Random.List.shuffle
-        |> Random.generate (Array.fromList >> Permutation)
+    Random.generate Basics.identity (generateOne n)
+
+
+{-| generateMany setSize listLength
+-}
+generateMany : Int -> Int -> Cmd (List Permutation)
+generateMany setSize listLength =
+    Random.list listLength (generateOne setSize)
+        |> Random.generate Basics.identity

@@ -52,6 +52,9 @@ type Msg
     | RemoveLastPermutation
     | GeneratePermutation Int
     | SetPermutation Int Permutation
+    | SetPermutations (List Permutation)
+    | GenerateAll
+    | ResetAll
     | NoOp
 
 
@@ -162,6 +165,15 @@ update msg model =
 
         SetPermutation i perm ->
             pure { model | permutations = List.setAt i perm model.permutations }
+
+        GenerateAll ->
+            ( model, Cmd.map SetPermutations (Permutation.generateMany model.n (List.length model.permutations)) )
+
+        SetPermutations ps ->
+            pure { model | permutations = ps }
+
+        ResetAll ->
+            pure { model | permutations = List.map (\_ -> Permutation.identity model.n) model.permutations }
 
         NoOp ->
             pure model
@@ -281,15 +293,26 @@ imageConfigControls canvasImage n permutations =
             [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove perm" ]
             , Html.button [ HE.onClick AddLastPermutation ] [ Html.text "Add perm" ]
             ]
+        , Html.div []
+            [ Html.button [ HE.onClick GenerateAll ] [ Html.text "Gen all" ]
+            , Html.button [ HE.onClick ResetAll ] [ Html.text "Reset all" ]
+            ]
         , Html.div [] <|
             List.indexedMap
                 (\i p ->
                     Html.div []
                         [ Html.text <| Permutation.showCycles p
-                        , Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Rand" ]
+                        , Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Gen" ]
                         ]
                 )
                 permutations
+        , Html.div []
+            [ Html.text "All composed: "
+            , Html.br [] []
+            , Html.text <|
+                Permutation.showCycles <|
+                    List.foldr Permutation.compose (Permutation.identity n) permutations
+            ]
         ]
 
 
@@ -395,3 +418,5 @@ subscriptions _ =
 -- that is given 1) a ; p = b find c such that p ; c = b
 --               2) p ; a = b find c such that c ; p = b
 -- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
+-- TODO add a result of composition if there's more than one perm
+-- TODO CSS: align controls and buttons in one column
