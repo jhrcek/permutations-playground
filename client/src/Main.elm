@@ -12,6 +12,7 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Html.Events.Extra.Mouse as Mouse
+import List.Extra as List
 import Permutation exposing (Permutation(..))
 import Task
 
@@ -49,6 +50,8 @@ type Msg
     | SetN Int
     | AddLastPermutation
     | RemoveLastPermutation
+    | GeneratePermutation Int
+    | SetPermutation Int Permutation
     | NoOp
 
 
@@ -103,57 +106,70 @@ init n () =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( case msg of
+    case msg of
         StartAt point ->
-            { model | movingCircle = getCircleAt point model }
+            pure { model | movingCircle = getCircleAt point model }
 
         MoveAt ( _, y ) ->
-            case model.movingCircle of
-                Just ( x, _ ) ->
-                    { model | movingCircle = Just ( x, y ) }
+            pure
+                (case model.movingCircle of
+                    Just ( x, _ ) ->
+                        { model | movingCircle = Just ( x, y ) }
 
-                Nothing ->
-                    model
+                    Nothing ->
+                        model
+                )
 
         EndAt ( _, y ) ->
-            case model.movingCircle of
-                Just ( x, _ ) ->
-                    { model | movingCircle = Nothing, circle = ( x, roundToNearest100 y ) }
+            pure
+                (case model.movingCircle of
+                    Just ( x, _ ) ->
+                        { model | movingCircle = Nothing, circle = ( x, roundToNearest100 y ) }
 
-                Nothing ->
-                    model
+                    Nothing ->
+                        model
+                )
 
         GotViewport viewPort ->
-            { model | viewPort = viewPort }
+            pure { model | viewPort = viewPort }
 
         SetHorizontalDist newDomCodDist ->
-            updateImage (\image -> { image | horizontalDist = newDomCodDist }) model
+            pure (updateImage (\image -> { image | horizontalDist = newDomCodDist }) model)
 
         SetVerticalDist newVerticalDist ->
-            updateImage (\image -> { image | verticalDist = newVerticalDist }) model
+            pure (updateImage (\image -> { image | verticalDist = newVerticalDist }) model)
 
         SetCircleRadius newCircleRadius ->
-            updateImage (\image -> { image | circleRadius = newCircleRadius }) model
+            pure (updateImage (\image -> { image | circleRadius = newCircleRadius }) model)
 
         SetPaddingX newPaddingX ->
-            updateImage (\image -> { image | paddingX = newPaddingX }) model
+            pure (updateImage (\image -> { image | paddingX = newPaddingX }) model)
 
         SetPaddingY newPaddingY ->
-            updateImage (\image -> { image | paddingY = newPaddingY }) model
+            pure (updateImage (\image -> { image | paddingY = newPaddingY }) model)
 
         SetN newN ->
-            { model | n = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
+            pure { model | n = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
 
         AddLastPermutation ->
-            { model | permutations = model.permutations ++ [ Permutation.identity model.n ] }
+            pure { model | permutations = model.permutations ++ [ Permutation.identity model.n ] }
 
         RemoveLastPermutation ->
-            { model | permutations = List.take (List.length model.permutations - 1) model.permutations }
+            pure { model | permutations = List.take (List.length model.permutations - 1) model.permutations }
+
+        GeneratePermutation i ->
+            ( model, Cmd.map (SetPermutation i) (Permutation.generate model.n) )
+
+        SetPermutation i perm ->
+            pure { model | permutations = List.setAt i perm model.permutations }
 
         NoOp ->
-            model
-    , Cmd.none
-    )
+            pure model
+
+
+pure : Model -> ( Model, Cmd Msg )
+pure model =
+    ( model, Cmd.none )
 
 
 updateImage : (CanvasImage -> CanvasImage) -> Model -> Model
@@ -266,8 +282,13 @@ imageConfigControls canvasImage n permutations =
             , Html.button [ HE.onClick AddLastPermutation ] [ Html.text "Add perm" ]
             ]
         , Html.div [] <|
-            List.map
-                (\p -> Html.div [] [ Html.text <| Permutation.showCycles p ])
+            List.indexedMap
+                (\i p ->
+                    Html.div []
+                        [ Html.text <| Permutation.showCycles p
+                        , Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Rand" ]
+                        ]
+                )
                 permutations
         ]
 
@@ -374,4 +395,3 @@ subscriptions _ =
 -- that is given 1) a ; p = b find c such that p ; c = b
 --               2) p ; a = b find c such that c ; p = b
 -- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
--- TODO add ability to generate random permutation in each spot

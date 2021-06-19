@@ -1,16 +1,29 @@
-module Permutation exposing (Permutation(..), identity, showCycles, toCycles)
+module Permutation exposing
+    ( Permutation(..)
+    , generate
+    , identity
+    , showCycles
+    , toCycles
+    )
 
 import Array exposing (Array)
 import List.Extra as List
+import Random
+import Random.List
 
 
+{-| Represents permutation of {1..n}
+
+Internally represented as Array {0..n-1}
+
+-}
 type Permutation
     = Permutation (Array Int)
 
 
 identity : Int -> Permutation
 identity n =
-    Permutation <| Array.initialize n (\i -> i)
+    Permutation <| Array.initialize n Basics.identity
 
 
 showCycles : Permutation -> String
@@ -62,3 +75,10 @@ toCycles ((Permutation perm) as p) =
 size : Permutation -> Int
 size (Permutation perm) =
     Array.length perm
+
+
+generate : Int -> Cmd Permutation
+generate n =
+    List.range 0 (n - 1)
+        |> Random.List.shuffle
+        |> Random.generate (Array.fromList >> Permutation)
