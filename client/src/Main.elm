@@ -48,9 +48,11 @@ type Msg
     | SetPaddingX Float
     | SetPaddingY Float
     | SetN Int
-    | AddLastPermutation
+    | AddIdentityLast
     | RemoveLastPermutation
     | GeneratePermutation Int
+    | ResetPermutation Int
+    | RemovePermutation Int
     | SetPermutation Int Permutation
     | SetPermutations (List Permutation)
     | GenerateAll
@@ -154,7 +156,7 @@ update msg model =
         SetN newN ->
             pure { model | n = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
 
-        AddLastPermutation ->
+        AddIdentityLast ->
             pure { model | permutations = model.permutations ++ [ Permutation.identity model.n ] }
 
         RemoveLastPermutation ->
@@ -162,6 +164,9 @@ update msg model =
 
         GeneratePermutation i ->
             ( model, Cmd.map (SetPermutation i) (Permutation.generate model.n) )
+
+        ResetPermutation i ->
+            pure { model | permutations = List.setAt i (Permutation.identity model.n) model.permutations }
 
         SetPermutation i perm ->
             pure { model | permutations = List.setAt i perm model.permutations }
@@ -174,6 +179,9 @@ update msg model =
 
         ResetAll ->
             pure { model | permutations = List.map (\_ -> Permutation.identity model.n) model.permutations }
+
+        RemovePermutation i ->
+            pure { model | permutations = List.removeAt i model.permutations }
 
         NoOp ->
             pure model
@@ -290,8 +298,8 @@ imageConfigControls canvasImage n permutations =
             , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n + 1 ] [ Html.text "+1" ]
             ]
         , Html.div []
-            [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove perm" ]
-            , Html.button [ HE.onClick AddLastPermutation ] [ Html.text "Add perm" ]
+            [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove last" ]
+            , Html.button [ HE.onClick AddIdentityLast ] [ Html.text "Add last" ]
             ]
         , Html.div []
             [ Html.button [ HE.onClick GenerateAll ] [ Html.text "Gen all" ]
@@ -301,8 +309,10 @@ imageConfigControls canvasImage n permutations =
             List.indexedMap
                 (\i p ->
                     Html.div []
-                        [ Html.text <| Permutation.showCycles p
-                        , Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Gen" ]
+                        [ Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Gen" ]
+                        , Html.button [ HE.onClick (ResetPermutation i) ] [ Html.text "Res" ]
+                        , Html.text <| Permutation.showCycles p
+                        , Html.button [ HE.onClick (RemovePermutation i) ] [ Html.text "✕" ]
                         ]
                 )
                 permutations
@@ -413,10 +423,7 @@ subscriptions _ =
 -- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
 -- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
--- TODO add a way to remove selected perm
 -- TODO add a way to move given permutation left-right within composition without altering the composition
 -- that is given 1) a ; p = b find c such that p ; c = b
 --               2) p ; a = b find c such that c ; p = b
--- TODO add composeLeftToRight : Permutation -> Permutation -> Permutation
--- TODO add a result of composition if there's more than one perm
 -- TODO CSS: align controls and buttons in one column
