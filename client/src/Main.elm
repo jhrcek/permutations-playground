@@ -1,13 +1,13 @@
 module Main exposing (main)
 
-import Array exposing (Array)
+import Array
 import Browser
 import Browser.Dom exposing (getViewport)
 import Browser.Events
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
-import Color exposing (Color)
+import Color
 import Html exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -239,7 +239,7 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { circle, movingCircle, permutations, viewPort, n, canvasImage, editState } =
+view { permutations, viewPort, n, canvasImage, editState } =
     Html.div
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"

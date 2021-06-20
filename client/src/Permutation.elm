@@ -6,13 +6,12 @@ module Permutation exposing
     , identity
     , parseCycles
     , showCycles
-    , toCycles
     )
 
 import Array exposing (Array)
 import Dict exposing (Dict)
 import List.Extra as List
-import Parser as P exposing ((|.), DeadEnd, Parser, Problem(..))
+import Parser as P exposing ((|.), Parser, Problem(..))
 import Random exposing (Generator)
 import Random.List
 
@@ -215,7 +214,7 @@ fromCycles n cycles =
                 addPairs c dict =
                     case c of
                         x :: y :: zs ->
-                            Dict.insert x y <| addPairs (y :: zs) dict
+                            addPairs (y :: zs) (Dict.insert x y dict)
 
                         [ _ ] ->
                             dict
