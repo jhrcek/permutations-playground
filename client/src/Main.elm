@@ -34,6 +34,7 @@ type alias Model =
     , n : Int
     , viewPort : ViewPort
     , canvasImage : CanvasImage
+    , editState : EditState
     }
 
 
@@ -52,6 +53,10 @@ type Msg
     | RemoveLastPermutation
     | GeneratePermutation Int
     | ResetPermutation Int
+    | EditPermutation Int Permutation
+    | CancelEdit
+    | SaveEdit Int Permutation
+    | SetPermutationString String
     | RemovePermutation Int
     | SetPermutation Int Permutation
     | SetPermutations (List Permutation)
@@ -73,6 +78,11 @@ type alias CanvasImage =
     , paddingX : Float
     , paddingY : Float
     }
+
+
+type EditState
+    = NotEditing
+    | Editing Int String (Result String Permutation)
 
 
 defaultImage : CanvasImage
@@ -97,6 +107,7 @@ init n () =
       , n = n
       , viewPort = { width = 1024, height = 768 }
       , canvasImage = defaultImage
+      , editState = NotEditing
       }
     , Task.perform
         (\vp ->
@@ -183,6 +194,31 @@ update msg model =
         RemovePermutation i ->
             pure { model | permutations = List.removeAt i model.permutations }
 
+        EditPermutation i perm ->
+            let
+                cycles =
+                    Permutation.showCycles perm
+            in
+            pure { model | editState = Editing i cycles (Permutation.parseCycles model.n cycles) }
+
+        SetPermutationString str ->
+            let
+                newEditState =
+                    case model.editState of
+                        NotEditing ->
+                            NotEditing
+
+                        Editing i _ _ ->
+                            Editing i str (Permutation.parseCycles model.n str)
+            in
+            pure { model | editState = newEditState }
+
+        CancelEdit ->
+            pure { model | editState = NotEditing }
+
+        SaveEdit i perm ->
+            pure { model | permutations = List.setAt i perm model.permutations, editState = NotEditing }
+
         NoOp ->
             pure model
 
@@ -203,12 +239,12 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
+view { circle, movingCircle, permutations, viewPort, n, canvasImage, editState } =
     Html.div
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage n permutations
+        [ imageConfigControls canvasImage n permutations editState
         , Canvas.toHtml ( viewPort.width - 300, viewPort.height )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
@@ -222,8 +258,8 @@ view { circle, movingCircle, permutations, viewPort, n, canvasImage } =
         ]
 
 
-imageConfigControls : CanvasImage -> Int -> List Permutation -> Html Msg
-imageConfigControls canvasImage n permutations =
+imageConfigControls : CanvasImage -> Int -> List Permutation -> EditState -> Html Msg
+imageConfigControls canvasImage n permutations editState =
     Html.div []
         [ Html.h3 [] [ Html.text "Controls" ]
         , Html.div []
@@ -307,14 +343,7 @@ imageConfigControls canvasImage n permutations =
             ]
         , Html.div [] <|
             List.indexedMap
-                (\i p ->
-                    Html.div []
-                        [ Html.button [ HE.onClick (GeneratePermutation i) ] [ Html.text "Gen" ]
-                        , Html.button [ HE.onClick (ResetPermutation i) ] [ Html.text "Res" ]
-                        , Html.text <| Permutation.showCycles p
-                        , Html.button [ HE.onClick (RemovePermutation i) ] [ Html.text "✕" ]
-                        ]
-                )
+                (\i p -> viewPermutation i p editState)
                 permutations
         , Html.div []
             [ Html.text "All composed: "
@@ -323,6 +352,40 @@ imageConfigControls canvasImage n permutations =
                 Permutation.showCycles <|
                     List.foldr Permutation.compose (Permutation.identity n) permutations
             ]
+        ]
+
+
+viewPermutation : Int -> Permutation -> EditState -> Html Msg
+viewPermutation index perm editState =
+    case editState of
+        NotEditing ->
+            viewPermutationPlain index perm
+
+        Editing editedIndex cyclesStr parseRes ->
+            if index == editedIndex then
+                Html.div []
+                    [ Html.input [ HA.value cyclesStr, HE.onInput SetPermutationString ] []
+                    , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
+                    , case parseRes of
+                        Err err ->
+                            Html.div [ HA.style "color" "red" ] [ Html.text err ]
+
+                        Ok newPerm ->
+                            Html.button [ HE.onClick (SaveEdit index newPerm) ] [ Html.text "Save" ]
+                    ]
+
+            else
+                viewPermutationPlain index perm
+
+
+viewPermutationPlain : Int -> Permutation -> Html Msg
+viewPermutationPlain index perm =
+    Html.div []
+        [ Html.button [ HE.onClick (GeneratePermutation index), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
+        , Html.button [ HE.onClick (ResetPermutation index), HA.title "Reset to identity" ] [ Html.text "↺" ]
+        , Html.button [ HE.onClick (EditPermutation index perm), HA.title "Edit permutation" ] [ Html.text "🖉" ]
+        , Html.text <| Permutation.showCycles perm
+        , Html.button [ HE.onClick (RemovePermutation index), HA.title "Delete permutation" ] [ Html.text "✕" ]
         ]
 
 
@@ -419,9 +482,6 @@ subscriptions _ =
 
 
 
--- TODO add a way to input permutations - via cycle notation (1 2 3) (4 5)?
--- TODO add parser of cycleNotations `parseCycles : Int -> String -> Maybe Permutation`
--- TODO add a way to edit permutation independently of others
 -- TODO add a way to edit permutation without altering composition
 -- TODO add a way to move given permutation left-right within composition without altering the composition
 -- that is given 1) a ; p = b find c such that p ; c = b

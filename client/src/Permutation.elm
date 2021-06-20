@@ -4,12 +4,15 @@ module Permutation exposing
     , generate
     , generateMany
     , identity
+    , parseCycles
     , showCycles
     , toCycles
     )
 
 import Array exposing (Array)
+import Dict exposing (Dict)
 import List.Extra as List
+import Parser as P exposing ((|.), DeadEnd, Parser, Problem(..))
 import Random exposing (Generator)
 import Random.List
 
@@ -108,3 +111,152 @@ generateMany : Int -> Int -> Cmd (List Permutation)
 generateMany setSize listLength =
     Random.list listLength (generateOne setSize)
         |> Random.generate Basics.identity
+
+
+parseCycles : Int -> String -> Result String Permutation
+parseCycles n input =
+    P.run (parser n) input
+        |> Result.mapError
+            (\listDeadEnds ->
+                List.map showDeadEnd listDeadEnds
+                    |> String.join ";"
+            )
+
+
+showDeadEnd : P.DeadEnd -> String
+showDeadEnd { problem } =
+    case problem of
+        Expecting str ->
+            "Expecting '" ++ str ++ "'"
+
+        ExpectingInt ->
+            "Expecting Int"
+
+        ExpectingHex ->
+            "Expecting Hex"
+
+        ExpectingOctal ->
+            "Expecting Octal"
+
+        ExpectingBinary ->
+            "Expecting Binary"
+
+        ExpectingFloat ->
+            "Expecting Float"
+
+        ExpectingNumber ->
+            "Expecting Number"
+
+        ExpectingVariable ->
+            "Expecting Variable"
+
+        ExpectingSymbol str ->
+            "Expecting symbol " ++ str
+
+        ExpectingKeyword str ->
+            "Expecting keyword" ++ str
+
+        ExpectingEnd ->
+            "Expecting End"
+
+        UnexpectedChar ->
+            "Unexpected Char"
+
+        Problem str ->
+            str
+
+        BadRepeat ->
+            "Bad repeat"
+
+
+parser : Int -> Parser Permutation
+parser n =
+    P.oneOf
+        [ P.succeed (identity n)
+            |. P.keyword "()"
+        , P.sequence
+            { start = ""
+            , separator = ""
+            , end = ""
+            , spaces = P.spaces
+            , item = cycleParser n
+            , trailing = P.Forbidden
+            }
+            |> P.andThen
+                (\cycles ->
+                    case cycles of
+                        [] ->
+                            P.succeed (identity n)
+
+                        xs ->
+                            if List.allDifferent (List.concat xs) then
+                                P.succeed (fromCycles n cycles)
+
+                            else
+                                P.problem "One or more numbers repeated within some cycles"
+                )
+        ]
+
+
+{-| This assumes `List (List Int)` represents valid permutation cycles from the parser
+-}
+fromCycles : Int -> List (List Int) -> Permutation
+fromCycles n cycles =
+    let
+        addMappingsFromCycle : List Int -> Dict Int Int -> Dict Int Int
+        addMappingsFromCycle cycle =
+            let
+                addLastToFirst : Dict Int Int -> Dict Int Int
+                addLastToFirst =
+                    Maybe.map2 (\lst fst -> Dict.insert lst fst) (List.last cycle) (List.head cycle)
+                        |> Maybe.withDefault Basics.identity
+
+                addPairs : List Int -> Dict Int Int -> Dict Int Int
+                addPairs c dict =
+                    case c of
+                        x :: y :: zs ->
+                            Dict.insert x y <| addPairs (y :: zs) dict
+
+                        [ _ ] ->
+                            dict
+
+                        [] ->
+                            dict
+            in
+            addPairs cycle << addLastToFirst
+
+        mappingsDict =
+            List.foldl addMappingsFromCycle Dict.empty cycles
+    in
+    Permutation
+        (Array.initialize n
+            (\i ->
+                Dict.get (i + 1) mappingsDict
+                    |> Maybe.map (\j -> j - 1)
+                    |> Maybe.withDefault i
+            )
+        )
+
+
+cycleParser : Int -> Parser (List Int)
+cycleParser n =
+    P.sequence
+        { start = "("
+        , separator = " "
+        , end = ")"
+        , spaces = P.succeed ()
+        , item = P.int
+        , trailing = P.Forbidden
+        }
+        |> P.andThen
+            (\ints ->
+                if List.all (\x -> 1 <= x && x <= n) ints then
+                    if List.allDifferent ints then
+                        P.succeed ints
+
+                    else
+                        P.problem "The numbers within each cycle must be unique"
+
+                else
+                    P.problem ("The numbers have to be between 1 and " ++ String.fromInt n ++ " inclusive")
+            )
