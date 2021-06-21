@@ -53,6 +53,7 @@ type Msg
     | RemoveLastPermutation
     | GeneratePermutation Int
     | ResetPermutation Int
+    | InvertPermutation Int
     | EditPermutation Int Permutation
     | CancelEdit
     | SaveEdit Int Permutation
@@ -178,6 +179,9 @@ update msg model =
 
         ResetPermutation i ->
             pure { model | permutations = List.setAt i (Permutation.identity model.n) model.permutations }
+
+        InvertPermutation i ->
+            pure { model | permutations = List.updateAt i Permutation.inverse model.permutations }
 
         SetPermutation i perm ->
             pure { model | permutations = List.setAt i perm model.permutations }
@@ -328,10 +332,17 @@ imageConfigControls canvasImage n permutations editState =
                 ]
             ]
         , Html.div []
-            [ Html.text "Set size "
-            , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n - 1 ] [ Html.text "-1" ]
-            , Html.text (" " ++ String.fromInt n ++ " ")
-            , Html.button [ HE.onClick <| SetN <| clamp 1 50 <| n + 1 ] [ Html.text "+1" ]
+            [ Html.label []
+                [ Html.text "Set size "
+                , Html.input
+                    [ HA.type_ "number"
+                    , HA.min "1"
+                    , HA.max "50"
+                    , HA.value (String.fromInt n)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map (SetN << clamp 1 50) << String.toInt)
+                    ]
+                    []
+                ]
             ]
         , Html.div []
             [ Html.button [ HE.onClick RemoveLastPermutation ] [ Html.text "Remove last" ]
@@ -381,11 +392,12 @@ viewPermutation index perm editState =
 viewPermutationPlain : Int -> Permutation -> Html Msg
 viewPermutationPlain index perm =
     Html.div []
-        [ Html.button [ HE.onClick (GeneratePermutation index), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
-        , Html.button [ HE.onClick (ResetPermutation index), HA.title "Reset to identity" ] [ Html.text "↺" ]
+        [ Html.button [ HE.onClick (ResetPermutation index), HA.title "Reset to identity" ] [ Html.text "↺" ]
+        , Html.button [ HE.onClick (GeneratePermutation index), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
+        , Html.button [ HE.onClick (InvertPermutation index), HA.title "Invert" ] [ Html.text "🠔" ]
         , Html.button [ HE.onClick (EditPermutation index perm), HA.title "Edit permutation" ] [ Html.text "🖉" ]
-        , Html.text <| Permutation.showCycles perm
         , Html.button [ HE.onClick (RemovePermutation index), HA.title "Delete permutation" ] [ Html.text "✕" ]
+        , Html.text <| Permutation.showCycles perm
         ]
 
 

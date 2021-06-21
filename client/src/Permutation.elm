@@ -4,6 +4,7 @@ module Permutation exposing
     , generate
     , generateMany
     , identity
+    , inverse
     , parseCycles
     , showCycles
     )
@@ -90,6 +91,15 @@ The result of `compose p1 p2` is a permutation which is like applying p1 followe
 compose : Permutation -> Permutation -> Permutation
 compose (Permutation p1) (Permutation p2) =
     Permutation (Array.map (\i -> Array.get i p2 |> Maybe.withDefault 0) p1)
+
+
+inverse : Permutation -> Permutation
+inverse (Permutation p) =
+    Array.toIndexedList p
+        |> List.sortBy Tuple.second
+        |> List.map Tuple.first
+        |> Array.fromList
+        |> Permutation
 
 
 generateOne : Int -> Generator Permutation
