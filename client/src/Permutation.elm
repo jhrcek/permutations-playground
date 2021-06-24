@@ -6,6 +6,8 @@ module Permutation exposing
     , identity
     , inverse
     , parseCycles
+    , shiftLeftToRight
+    , shiftRightToLeft
     , showCycles
     )
 
@@ -91,6 +93,22 @@ The result of `compose p1 p2` is a permutation which is like applying p1 followe
 compose : Permutation -> Permutation -> Permutation
 compose (Permutation p1) (Permutation p2) =
     Permutation (Array.map (\i -> Array.get i p2 |> Maybe.withDefault 0) p1)
+
+
+{-| shiftLeftToRight a b returns a pair of permutations (a;b;a^-1, a).
+The effect of this is that a is "shifted to the right", while the pair still composes to a;b
+-}
+shiftLeftToRight : Permutation -> Permutation -> ( Permutation, Permutation )
+shiftLeftToRight a b =
+    ( compose (compose a b) (inverse a), a )
+
+
+{-| shiftRightToLeft a b returns a pair of permutations (b, b^-1;a;b).
+The effect of this is that a is "shifted to the left", while the pair still composes to a;b
+-}
+shiftRightToLeft : Permutation -> Permutation -> ( Permutation, Permutation )
+shiftRightToLeft a b =
+    ( b, compose (compose (inverse b) a) b )
 
 
 inverse : Permutation -> Permutation

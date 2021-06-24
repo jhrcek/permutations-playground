@@ -54,6 +54,8 @@ type Msg
     | GeneratePermutation Int
     | ResetPermutation Int
     | InvertPermutation Int
+    | ShiftPermutationLeft Int
+    | ShiftPermutationRight Int
     | EditPermutation Int Permutation
     | CancelEdit
     | SaveEdit Int Permutation
@@ -183,6 +185,48 @@ update msg model =
         InvertPermutation i ->
             pure { model | permutations = List.updateAt i Permutation.inverse model.permutations }
 
+        ShiftPermutationLeft i ->
+            case
+                Maybe.map2
+                    (\a b ->
+                        let
+                            ( aNew, bNew ) =
+                                Permutation.shiftRightToLeft a b
+                        in
+                        model.permutations
+                            |> List.setAt (i - 1) aNew
+                            |> List.setAt i bNew
+                    )
+                    (List.getAt (i - 1) model.permutations)
+                    (List.getAt i model.permutations)
+            of
+                Just newPermutations ->
+                    pure { model | permutations = newPermutations }
+
+                Nothing ->
+                    pure model
+
+        ShiftPermutationRight i ->
+            case
+                Maybe.map2
+                    (\a b ->
+                        let
+                            ( aNew, bNew ) =
+                                Permutation.shiftLeftToRight a b
+                        in
+                        model.permutations
+                            |> List.setAt i aNew
+                            |> List.setAt (i + 1) bNew
+                    )
+                    (List.getAt i model.permutations)
+                    (List.getAt (i + 1) model.permutations)
+            of
+                Just newPermutations ->
+                    pure { model | permutations = newPermutations }
+
+                Nothing ->
+                    pure model
+
         SetPermutation i perm ->
             pure { model | permutations = List.setAt i perm model.permutations }
 
@@ -264,6 +308,10 @@ view { permutations, viewPort, n, canvasImage, editState } =
 
 imageConfigControls : CanvasImage -> Int -> List Permutation -> EditState -> Html Msg
 imageConfigControls canvasImage n permutations editState =
+    let
+        permCount =
+            List.length permutations
+    in
     Html.div []
         [ Html.h3 [] [ Html.text "Controls" ]
         , Html.div []
@@ -354,7 +402,7 @@ imageConfigControls canvasImage n permutations editState =
             ]
         , Html.div [] <|
             List.indexedMap
-                (\i p -> viewPermutation i p editState)
+                (\i p -> viewPermutation i p editState permCount)
                 permutations
         , Html.div []
             [ Html.text "All composed: "
@@ -366,11 +414,11 @@ imageConfigControls canvasImage n permutations editState =
         ]
 
 
-viewPermutation : Int -> Permutation -> EditState -> Html Msg
-viewPermutation index perm editState =
+viewPermutation : Int -> Permutation -> EditState -> Int -> Html Msg
+viewPermutation index perm editState permCount =
     case editState of
         NotEditing ->
-            viewPermutationPlain index perm
+            viewPermutationPlain index permCount perm
 
         Editing editedIndex cyclesStr parseRes ->
             if index == editedIndex then
@@ -386,19 +434,32 @@ viewPermutation index perm editState =
                     ]
 
             else
-                viewPermutationPlain index perm
+                viewPermutationPlain index permCount perm
 
 
-viewPermutationPlain : Int -> Permutation -> Html Msg
-viewPermutationPlain index perm =
+viewPermutationPlain : Int -> Int -> Permutation -> Html Msg
+viewPermutationPlain index permCount perm =
     Html.div []
         [ Html.button [ HE.onClick (ResetPermutation index), HA.title "Reset to identity" ] [ Html.text "↺" ]
         , Html.button [ HE.onClick (GeneratePermutation index), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
         , Html.button [ HE.onClick (InvertPermutation index), HA.title "Invert" ] [ Html.text "🠔" ]
+        , viewIf (index > 0) <|
+            Html.button [ HE.onClick (ShiftPermutationLeft index), HA.title "Shift left without affecting composition" ] [ Html.text "«" ]
+        , viewIf (index < (permCount - 1)) <|
+            Html.button [ HE.onClick (ShiftPermutationRight index), HA.title "Shift right without affecting composition" ] [ Html.text "»" ]
         , Html.button [ HE.onClick (EditPermutation index perm), HA.title "Edit permutation" ] [ Html.text "🖉" ]
         , Html.button [ HE.onClick (RemovePermutation index), HA.title "Delete permutation" ] [ Html.text "✕" ]
         , Html.text <| Permutation.showCycles perm
         ]
+
+
+viewIf : Bool -> Html msg -> Html msg
+viewIf cond html =
+    if cond then
+        html
+
+    else
+        Html.text ""
 
 
 permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
@@ -495,7 +556,5 @@ subscriptions _ =
 
 
 -- TODO add a way to edit permutation without altering composition
--- TODO add a way to move given permutation left-right within composition without altering the composition
--- that is given 1) a ; p = b find c such that p ; c = b
---               2) p ; a = b find c such that c ; p = b
 -- TODO CSS: align controls and buttons in one column
+-- TODO don't show one cycles in cycle notation
