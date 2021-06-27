@@ -443,23 +443,28 @@ viewPermutationPlain index permCount perm =
         [ Html.button [ HE.onClick (ResetPermutation index), HA.title "Reset to identity" ] [ Html.text "↺" ]
         , Html.button [ HE.onClick (GeneratePermutation index), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
         , Html.button [ HE.onClick (InvertPermutation index), HA.title "Invert" ] [ Html.text "🠔" ]
-        , viewIf (index > 0) <|
-            Html.button [ HE.onClick (ShiftPermutationLeft index), HA.title "Shift left without affecting composition" ] [ Html.text "«" ]
-        , viewIf (index < (permCount - 1)) <|
-            Html.button [ HE.onClick (ShiftPermutationRight index), HA.title "Shift right without affecting composition" ] [ Html.text "»" ]
+        , Html.button
+            [ if index > 0 then
+                HE.onClick (ShiftPermutationLeft index)
+
+              else
+                HA.disabled True
+            , HA.title "Shift left without affecting composition"
+            ]
+            [ Html.text "«" ]
+        , Html.button
+            [ if index < (permCount - 1) then
+                HE.onClick (ShiftPermutationRight index)
+
+              else
+                HA.disabled True
+            , HA.title "Shift right without affecting composition"
+            ]
+            [ Html.text "»" ]
         , Html.button [ HE.onClick (EditPermutation index perm), HA.title "Edit permutation" ] [ Html.text "🖉" ]
         , Html.button [ HE.onClick (RemovePermutation index), HA.title "Delete permutation" ] [ Html.text "✕" ]
         , Html.text <| Permutation.showCycles perm
         ]
-
-
-viewIf : Bool -> Html msg -> Html msg
-viewIf cond html =
-    if cond then
-        html
-
-    else
-        Html.text ""
 
 
 permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
@@ -557,4 +562,4 @@ subscriptions _ =
 
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
--- TODO don't show one cycles in cycle notation
+-- TODO make enter confirm permutation edit

@@ -43,8 +43,10 @@ showCycles p =
         "()"
 
     else
-        String.concat <|
-            List.map (\cyc -> "(" ++ String.join " " (List.map (String.fromInt << (+) 1) cyc) ++ ")") cs
+        -- Don't show cycles of length 1
+        List.filter (\c -> List.length c /= 1) cs
+            |> List.map (\cyc -> "(" ++ String.join " " (List.map (String.fromInt << (+) 1) cyc) ++ ")")
+            |> String.concat
 
 
 toCycles : Permutation -> List (List Int)
