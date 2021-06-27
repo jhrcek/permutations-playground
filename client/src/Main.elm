@@ -8,10 +8,11 @@ import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
 import Color
-import Html exposing (Html)
+import Html exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Html.Events.Extra.Mouse as Mouse
+import Json.Decode as Decode
 import List.Extra as List
 import Permutation exposing (Permutation(..))
 import Task
@@ -422,19 +423,49 @@ viewPermutation index perm editState permCount =
 
         Editing editedIndex cyclesStr parseRes ->
             if index == editedIndex then
-                Html.div []
-                    [ Html.input [ HA.value cyclesStr, HE.onInput SetPermutationString ] []
-                    , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
-                    , case parseRes of
-                        Err err ->
-                            Html.div [ HA.style "color" "red" ] [ Html.text err ]
+                let
+                    cancelButton =
+                        Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
 
-                        Ok newPerm ->
-                            Html.button [ HE.onClick (SaveEdit index newPerm) ] [ Html.text "Save" ]
-                    ]
+                    inputAttrs =
+                        [ HA.value cyclesStr
+                        , HE.onInput SetPermutationString
+                        ]
+                in
+                case parseRes of
+                    Err err ->
+                        Html.div []
+                            [ Html.input inputAttrs []
+                            , cancelButton
+                            , Html.div [ HA.style "color" "red" ] [ Html.text err ]
+                            ]
+
+                    Ok newPerm ->
+                        Html.div []
+                            [ Html.input (onEnter (SaveEdit index newPerm) :: inputAttrs) []
+                            , cancelButton
+                            , Html.button
+                                [ HE.onClick (SaveEdit index newPerm) ]
+                                [ Html.text "Save" ]
+                            ]
 
             else
                 viewPermutationPlain index permCount perm
+
+
+onEnter : msg -> Attribute msg
+onEnter msg =
+    HE.on "keydown"
+        (HE.keyCode
+            |> Decode.andThen
+                (\keyCode ->
+                    if keyCode == 13 {- Enter -} then
+                        Decode.succeed msg
+
+                    else
+                        Decode.fail ""
+                )
+        )
 
 
 viewPermutationPlain : Int -> Int -> Permutation -> Html Msg
@@ -562,4 +593,4 @@ subscriptions _ =
 
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
--- TODO make enter confirm permutation edit
+-- TODO focus input after clicking edit button
