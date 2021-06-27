@@ -248,7 +248,9 @@ update msg model =
                 cycles =
                     Permutation.showCycles perm
             in
-            pure { model | editState = Editing i cycles (Permutation.parseCycles model.n cycles) }
+            ( { model | editState = Editing i cycles (Permutation.parseCycles model.n cycles) }
+            , focusPermutationInput
+            )
 
         SetPermutationString str ->
             let
@@ -430,6 +432,7 @@ viewPermutation index perm editState permCount =
                     inputAttrs =
                         [ HA.value cyclesStr
                         , HE.onInput SetPermutationString
+                        , HA.id permutationInputId
                         ]
                 in
                 case parseRes of
@@ -451,6 +454,16 @@ viewPermutation index perm editState permCount =
 
             else
                 viewPermutationPlain index permCount perm
+
+
+permutationInputId : String
+permutationInputId =
+    "perm-input"
+
+
+focusPermutationInput : Cmd Msg
+focusPermutationInput =
+    Task.attempt (\_ -> NoOp) (Browser.Dom.focus permutationInputId)
 
 
 onEnter : msg -> Attribute msg
@@ -593,4 +606,3 @@ subscriptions _ =
 
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
--- TODO focus input after clicking edit button
