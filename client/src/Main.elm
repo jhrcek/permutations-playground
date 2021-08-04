@@ -606,3 +606,5 @@ subscriptions _ =
 
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
+-- TODO add way to save particular permutation
+-- TODO add hard-wired model with pre-saved rubik's cube generating permutations
