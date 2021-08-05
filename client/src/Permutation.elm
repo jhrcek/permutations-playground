@@ -1,6 +1,7 @@
 module Permutation exposing
     ( Permutation(..)
     , compose
+    , fixedPoints
     , generate
     , generateMany
     , identity
@@ -47,6 +48,19 @@ showCycles p =
         List.filter (\c -> List.length c /= 1) cs
             |> List.map (\cyc -> "(" ++ String.join " " (List.map (String.fromInt << (+) 1) cyc) ++ ")")
             |> String.concat
+
+
+fixedPoints : Permutation -> List Int
+fixedPoints (Permutation p) =
+    Array.toIndexedList p
+        |> List.filterMap
+            (\( i, j ) ->
+                if i == j then
+                    Just (i + 1)
+
+                else
+                    Nothing
+            )
 
 
 toCycles : Permutation -> List (List Int)

@@ -407,12 +407,24 @@ imageConfigControls canvasImage n permutations editState =
             List.indexedMap
                 (\i p -> viewPermutation i p editState permCount)
                 permutations
-        , Html.div []
-            [ Html.text "All composed: "
-            , Html.br [] []
-            , Html.text <|
-                Permutation.showCycles <|
-                    List.foldr Permutation.compose (Permutation.identity n) permutations
+        , let
+            composition =
+                List.foldr Permutation.compose (Permutation.identity n) permutations
+          in
+          Html.div []
+            [ Html.div []
+                [ Html.text "All composed: "
+                , Html.br [] []
+                , Html.text <| Permutation.showCycles composition
+                ]
+            , Html.div []
+                [ Html.text "Fixed points: "
+                , Html.br [] []
+                , Html.text <|
+                    String.join ", " <|
+                        List.map String.fromInt <|
+                            Permutation.fixedPoints composition
+                ]
             ]
         ]
 
@@ -608,3 +620,4 @@ subscriptions _ =
 -- TODO CSS: align controls and buttons in one column
 -- TODO add way to save particular permutation
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
+-- TODO allow viewing permutations with 50 sized set
