@@ -39,6 +39,13 @@ type alias Model =
     }
 
 
+canvasDimensions : CanvasImage -> ViewPort -> Int -> Int -> { width : Int, height : Int }
+canvasDimensions canvasImage viewPort setSize permCount =
+    { width = max viewPort.width (permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX) - controlsWidth
+    , height = max viewPort.height (setSize * canvasImage.verticalDist + 2 * round canvasImage.paddingY)
+    }
+
+
 type Msg
     = StartAt Point
     | MoveAt Point
@@ -291,22 +298,31 @@ roundToNearest100 x =
 
 view : Model -> Html Msg
 view { permutations, viewPort, n, canvasImage, editState } =
+    let
+        canvasDims =
+            canvasDimensions canvasImage viewPort n (List.length permutations)
+    in
     Html.div
         [ HA.style "display" "grid"
-        , HA.style "grid-template-columns" "300px auto"
+        , HA.style "grid-template-columns" (String.fromInt controlsWidth ++ "px auto")
         ]
         [ imageConfigControls canvasImage n permutations editState
-        , Canvas.toHtml ( viewPort.width - 300, viewPort.height )
+        , Canvas.toHtml ( canvasDims.width, canvasDims.height )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
             , Mouse.onUp (.offsetPos >> EndAt)
             ]
-            (Canvas.clear ( 0, 0 ) (toFloat viewPort.width) (toFloat viewPort.height)
+            (Canvas.clear ( 0, 0 ) (toFloat canvasDims.width) (toFloat canvasDims.height)
                 :: permutationLines canvasImage n permutations
                 :: permutationCircles canvasImage n permutations
                 :: permutationTexts canvasImage n permutations
             )
         ]
+
+
+controlsWidth : Int
+controlsWidth =
+    300
 
 
 imageConfigControls : CanvasImage -> Int -> List Permutation -> EditState -> Html Msg
@@ -620,4 +636,3 @@ subscriptions _ =
 -- TODO CSS: align controls and buttons in one column
 -- TODO add way to save particular permutation
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
--- TODO allow viewing permutations with 50 sized set
