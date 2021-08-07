@@ -2,8 +2,7 @@ module Main exposing (main)
 
 import Array
 import Browser
-import Browser.Dom exposing (getViewport)
-import Browser.Events
+import Browser.Dom
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
@@ -32,17 +31,9 @@ type alias Model =
     { movingCircle : Maybe Point
     , circle : Point
     , permutations : List Permutation
-    , n : Int
-    , viewPort : ViewPort
+    , setSize : Int
     , canvasImage : CanvasImage
     , editState : EditState
-    }
-
-
-canvasDimensions : CanvasImage -> ViewPort -> Int -> Int -> { width : Int, height : Int }
-canvasDimensions canvasImage viewPort setSize permCount =
-    { width = max viewPort.width (permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX) - controlsWidth
-    , height = max viewPort.height (setSize * canvasImage.verticalDist + 2 * round canvasImage.paddingY)
     }
 
 
@@ -50,7 +41,6 @@ type Msg
     = StartAt Point
     | MoveAt Point
     | EndAt Point
-    | GotViewport ViewPort
     | SetHorizontalDist Int
     | SetVerticalDist Int
     | SetCircleRadius Float
@@ -74,12 +64,6 @@ type Msg
     | GenerateAll
     | ResetAll
     | NoOp
-
-
-type alias ViewPort =
-    { width : Int
-    , height : Int
-    }
 
 
 type alias CanvasImage =
@@ -115,19 +99,11 @@ init n () =
             , Permutation (Array.fromList [ 2, 0, 1 ])
             , Permutation.identity n
             ]
-      , n = n
-      , viewPort = { width = 1024, height = 768 }
+      , setSize = n
       , canvasImage = defaultImage
       , editState = NotEditing
       }
-    , Task.perform
-        (\vp ->
-            GotViewport
-                { width = round vp.viewport.width
-                , height = round vp.viewport.height
-                }
-        )
-        getViewport
+    , Cmd.none
     )
 
 
@@ -157,9 +133,6 @@ update msg model =
                         model
                 )
 
-        GotViewport viewPort ->
-            pure { model | viewPort = viewPort }
-
         SetHorizontalDist newDomCodDist ->
             pure (updateImage (\image -> { image | horizontalDist = newDomCodDist }) model)
 
@@ -176,19 +149,19 @@ update msg model =
             pure (updateImage (\image -> { image | paddingY = newPaddingY }) model)
 
         SetN newN ->
-            pure { model | n = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
+            pure { model | setSize = newN, permutations = List.map (\_ -> Permutation.identity newN) model.permutations }
 
         AddIdentityLast ->
-            pure { model | permutations = model.permutations ++ [ Permutation.identity model.n ] }
+            pure { model | permutations = model.permutations ++ [ Permutation.identity model.setSize ] }
 
         RemoveLastPermutation ->
             pure { model | permutations = List.take (List.length model.permutations - 1) model.permutations }
 
         GeneratePermutation i ->
-            ( model, Cmd.map (SetPermutation i) (Permutation.generate model.n) )
+            ( model, Cmd.map (SetPermutation i) (Permutation.generate model.setSize) )
 
         ResetPermutation i ->
-            pure { model | permutations = List.setAt i (Permutation.identity model.n) model.permutations }
+            pure { model | permutations = List.setAt i (Permutation.identity model.setSize) model.permutations }
 
         InvertPermutation i ->
             pure { model | permutations = List.updateAt i Permutation.inverse model.permutations }
@@ -239,13 +212,13 @@ update msg model =
             pure { model | permutations = List.setAt i perm model.permutations }
 
         GenerateAll ->
-            ( model, Cmd.map SetPermutations (Permutation.generateMany model.n (List.length model.permutations)) )
+            ( model, Cmd.map SetPermutations (Permutation.generateMany model.setSize (List.length model.permutations)) )
 
         SetPermutations ps ->
             pure { model | permutations = ps }
 
         ResetAll ->
-            pure { model | permutations = List.map (\_ -> Permutation.identity model.n) model.permutations }
+            pure { model | permutations = List.map (\_ -> Permutation.identity model.setSize) model.permutations }
 
         RemovePermutation i ->
             pure { model | permutations = List.removeAt i model.permutations }
@@ -255,7 +228,7 @@ update msg model =
                 cycles =
                     Permutation.showCycles perm
             in
-            ( { model | editState = Editing i cycles (Permutation.parseCycles model.n cycles) }
+            ( { model | editState = Editing i cycles (Permutation.parseCycles model.setSize cycles) }
             , focusPermutationInput
             )
 
@@ -267,7 +240,7 @@ update msg model =
                             NotEditing
 
                         Editing i _ _ ->
-                            Editing i str (Permutation.parseCycles model.n str)
+                            Editing i str (Permutation.parseCycles model.setSize str)
             in
             pure { model | editState = newEditState }
 
@@ -297,32 +270,33 @@ roundToNearest100 x =
 
 
 view : Model -> Html Msg
-view { permutations, viewPort, n, canvasImage, editState } =
+view { permutations, setSize, canvasImage, editState } =
     let
-        canvasDims =
-            canvasDimensions canvasImage viewPort n (List.length permutations)
+        permCount =
+            List.length permutations
+
+        canvasWidth =
+            permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX
+
+        canvasHeight =
+            setSize * canvasImage.verticalDist + 2 * round canvasImage.paddingY
     in
     Html.div
         [ HA.style "display" "grid"
-        , HA.style "grid-template-columns" (String.fromInt controlsWidth ++ "px auto")
+        , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage n permutations editState
-        , Canvas.toHtml ( canvasDims.width, canvasDims.height )
+        [ imageConfigControls canvasImage setSize permutations editState
+        , Canvas.toHtml ( canvasWidth, canvasHeight )
             [ Mouse.onDown (.offsetPos >> StartAt)
             , Mouse.onMove (.offsetPos >> MoveAt)
             , Mouse.onUp (.offsetPos >> EndAt)
             ]
-            (Canvas.clear ( 0, 0 ) (toFloat canvasDims.width) (toFloat canvasDims.height)
-                :: permutationLines canvasImage n permutations
-                :: permutationCircles canvasImage n permutations
-                :: permutationTexts canvasImage n permutations
+            (Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight)
+                :: permutationLines canvasImage setSize permutations
+                :: permutationCircles canvasImage setSize permutations
+                :: permutationTexts canvasImage setSize permutations
             )
         ]
-
-
-controlsWidth : Int
-controlsWidth =
-    300
 
 
 imageConfigControls : CanvasImage -> Int -> List Permutation -> EditState -> Html Msg
@@ -628,7 +602,7 @@ getCircleAt p { circle, canvasImage } =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Browser.Events.onResize (\w h -> GotViewport { width = w, height = h })
+    Sub.none
 
 
 
