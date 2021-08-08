@@ -8881,7 +8881,7 @@ var $author$project$Main$imageConfigControls = F6(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text('Add Permutation')
+									$elm$html$Html$text('Add permutation')
 								]))
 						])),
 					A2(
