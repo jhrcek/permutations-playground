@@ -12,3 +12,6 @@ github-pages:
 	cp elm.js index.html /tmp/
 	git checkout github-pages
 	cp /tmp/elm.js /tmp/index.html ..
+	git add ../elm.js ../index.html
+	git commit -m'Deploy to github pages'
+

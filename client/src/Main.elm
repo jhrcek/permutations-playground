@@ -434,7 +434,7 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
                 ]
             ]
         , Html.h3 [] [ Html.text "Saved" ]
-        , Html.div [] [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add Permutation" ] ]
+        , Html.div [] [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add permutation" ] ]
         , Html.div [] <|
             List.map
                 (\( idx, ( name, p ) ) -> viewSavedPermutation idx name p maybeEditState)
