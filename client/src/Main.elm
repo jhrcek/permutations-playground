@@ -648,10 +648,7 @@ subscriptions _ =
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
 -- TODO add way to save particular permutation
--- TODO add save button to composed perms
--- TODO add button to add saved to composed
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
 -- TODO add button to reset canvas visual controls
--- TODO add buttons to shift left/right ignoring effect on composition
--- TODO should composed perms be always subset of saved ones?
--- TODO after adding saved to composition, show names of saved ones in composition
+-- TODO add button to shift perm right/left without affecting composition
+-- TODO when renaming, warn if newName already exists
