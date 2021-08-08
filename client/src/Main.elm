@@ -11,9 +11,9 @@ import Dict exposing (Dict)
 import Html exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
-import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Permutation exposing (Permutation(..))
 import Task
 
@@ -31,37 +31,36 @@ main =
 type alias Model =
     { movingCircle : Maybe Point
     , circle : Point
-    , permutationNames : List String
-    , savedPermutations : Dict String Permutation
+    , permutationIndices : List Int
+    , savedPermutations : Dict Int ( String, Permutation )
     , setSize : Int
     , canvasImage : CanvasImage
-    , permutationEdit : EditState
+    , permutationEdit : Maybe EditState
     }
 
 
 type Msg
-    = StartAt Point
-    | MoveAt Point
-    | EndAt Point
-    | SetHorizontalDist Int
+    = -- Visual controls
+      SetHorizontalDist Int
     | SetVerticalDist Int
     | SetCircleRadius Float
     | SetPaddingX Float
     | SetPaddingY Float
     | SetN Int
-    | UpdatePermutation String PermutationUpdate
-    | StartNameEdit String
-    | SaveNameEdit
-    | SetPermutationName String
+      -- Changing composition
     | ShiftPermutationLeft Int
     | ShiftPermutationRight Int
     | RemovePermutationFromComposition Int
-    | CancelEdit
-    | SetPermutationString String
-    | SetPermutations (List Permutation)
-    | AddPermutationToComposition String
+    | AddPermutationToComposition Int
     | GenerateAll
     | ResetAll
+      -- Changing saved perms
+    | UpdatePermutation Int PermutationUpdate
+    | CancelEdit
+    | SaveEditedPermutation Int Permutation
+    | SetPermutationName String
+    | SetPermutationCycles String
+    | SetPermutations (List Permutation)
     | NoOp
 
 
@@ -69,10 +68,9 @@ type PermutationUpdate
     = ResetPermutation
     | GeneratePermutation
     | InvertPermutation
-    | StartPermutationEdit Permutation
+    | StartPermutationEdit ( String, Permutation )
     | RemovePermutation
     | SetPermutation Permutation
-    | SaveEditedPermutation Permutation
 
 
 type alias CanvasImage =
@@ -84,11 +82,12 @@ type alias CanvasImage =
     }
 
 
-type EditState
-    = NotEditing
-      -- TODO refactor so that name and perm can be edited at once
-    | EditingPermutation String String (Result String Permutation)
-    | EditingSavedName String String
+type alias EditState =
+    { originalName : String
+    , newName : String
+    , cyclesString : String
+    , parsedCycles : Result String Permutation
+    }
 
 
 defaultImage : CanvasImage
@@ -109,15 +108,15 @@ init n () =
             , Permutation (Array.fromList [ 1, 2, 0 ])
             , Permutation (Array.fromList [ 2, 0, 1 ])
             ]
-                |> List.map (\p -> ( Permutation.showCycles p, p ))
+                |> List.indexedMap (\i p -> ( i, ( Permutation.showCycles p, p ) ))
     in
     ( { movingCircle = Nothing
       , circle = ( 100, 100 )
-      , permutationNames = List.map Tuple.first initialPerms
+      , permutationIndices = List.map Tuple.first initialPerms
       , savedPermutations = Dict.fromList initialPerms
       , setSize = n
       , canvasImage = defaultImage
-      , permutationEdit = NotEditing
+      , permutationEdit = Nothing
       }
     , Cmd.none
     )
@@ -128,29 +127,6 @@ update msg model =
     case msg of
         NoOp ->
             pure model
-
-        StartAt point ->
-            pure { model | movingCircle = getCircleAt point model }
-
-        MoveAt ( _, y ) ->
-            pure
-                (case model.movingCircle of
-                    Just ( x, _ ) ->
-                        { model | movingCircle = Just ( x, y ) }
-
-                    Nothing ->
-                        model
-                )
-
-        EndAt ( _, y ) ->
-            pure
-                (case model.movingCircle of
-                    Just ( x, _ ) ->
-                        { model | movingCircle = Nothing, circle = ( x, roundToNearest100 y ) }
-
-                    Nothing ->
-                        model
-                )
 
         SetHorizontalDist newDomCodDist ->
             pure (updateImage (\image -> { image | horizontalDist = newDomCodDist }) model)
@@ -171,135 +147,136 @@ update msg model =
             pure
                 { model
                     | setSize = newN
-                    , permutationNames = List.map (always "id") model.permutationNames
-                    , savedPermutations = Dict.fromList [ ( "id", Permutation.identity newN ) ]
+                    , permutationIndices = List.map (always 0) model.permutationIndices
+                    , savedPermutations = Dict.fromList [ ( 0, ( "id", Permutation.identity newN ) ) ]
                 }
 
         ShiftPermutationLeft i ->
             if i > 0 then
-                pure { model | permutationNames = List.swapAt (i - 1) i model.permutationNames }
+                pure { model | permutationIndices = List.swapAt (i - 1) i model.permutationIndices }
 
             else
                 pure model
 
         ShiftPermutationRight i ->
-            if i < List.length model.permutationNames then
-                pure { model | permutationNames = List.swapAt i (i + 1) model.permutationNames }
+            if i < List.length model.permutationIndices then
+                pure { model | permutationIndices = List.swapAt i (i + 1) model.permutationIndices }
 
             else
                 pure model
 
         GenerateAll ->
-            ( model, Cmd.map SetPermutations (Permutation.generateMany model.setSize (List.length model.permutationNames)) )
+            ( model, Cmd.map SetPermutations (Permutation.generateMany model.setSize (List.length model.permutationIndices)) )
 
-        SetPermutations ps ->
+        SetPermutations _ ->
             -- TODO make this work under the name "named permutation" model
             pure model
 
         ResetAll ->
             pure
                 { model
-                    | permutationNames = List.map (always "id") model.permutationNames
-                    , savedPermutations = Dict.insert "id" (Permutation.identity model.setSize) model.savedPermutations
+                    | permutationIndices = List.map (always 0) model.permutationIndices
+                    , savedPermutations = Dict.insert 0 ( "id", Permutation.identity model.setSize ) model.savedPermutations
                 }
 
-        SetPermutationString str ->
-            let
-                newEditState =
-                    case model.permutationEdit of
-                        NotEditing ->
-                            NotEditing
-
-                        EditingPermutation permLocation _ _ ->
-                            EditingPermutation permLocation str (Permutation.parseCycles model.setSize str)
-
-                        EditingSavedName oldName newName ->
-                            EditingSavedName oldName newName
-            in
-            pure { model | permutationEdit = newEditState }
-
-        CancelEdit ->
-            pure { model | permutationEdit = NotEditing }
-
-        StartNameEdit oldName ->
-            ( { model | permutationEdit = EditingSavedName oldName "" }
-            , focusPermutationInput
-            )
-
-        UpdatePermutation permName permutationUpdate ->
-            case permutationUpdate of
-                ResetPermutation ->
-                    pure { model | savedPermutations = Dict.update permName (Maybe.map (always (Permutation.identity model.setSize))) model.savedPermutations }
-
-                GeneratePermutation ->
-                    ( model, Cmd.map (UpdatePermutation permName << SetPermutation) (Permutation.generate model.setSize) )
-
-                InvertPermutation ->
-                    pure { model | savedPermutations = Dict.update permName (Maybe.map Permutation.inverse) model.savedPermutations }
-
-                StartPermutationEdit perm ->
-                    let
-                        cycles =
-                            Permutation.showCycles perm
-                    in
-                    ( { model | permutationEdit = EditingPermutation permName cycles (Permutation.parseCycles model.setSize cycles) }
-                    , focusPermutationInput
-                    )
-
-                RemovePermutation ->
-                    pure { model | savedPermutations = Dict.remove permName model.savedPermutations }
-
-                SetPermutation perm ->
-                    pure
-                        { model
-                            | savedPermutations =
-                                -- After generating the perm, we remove it under old name
-                                -- and insert it under the default new name, which we set to cycles string by default
-                                Dict.insert (Permutation.showCycles perm) perm <|
-                                    Dict.remove permName model.savedPermutations
-                        }
-
-                SaveEditedPermutation perm ->
-                    pure
-                        { model
-                            | savedPermutations = Dict.insert permName perm model.savedPermutations
-                            , permutationEdit = NotEditing
-                        }
-
-        SaveNameEdit ->
-            case model.permutationEdit of
-                EditingSavedName oldName newName ->
-                    pure
-                        { model
-                            | savedPermutations =
-                                case Dict.get oldName model.savedPermutations of
-                                    Just perm ->
-                                        Dict.insert newName perm (Dict.remove oldName model.savedPermutations)
-
-                                    Nothing ->
-                                        model.savedPermutations
-                        }
-
-                _ ->
-                    pure model
+        SetPermutationCycles newCyclesString ->
+            pure
+                { model
+                    | permutationEdit =
+                        Maybe.map
+                            (\editState ->
+                                { editState
+                                    | cyclesString = newCyclesString
+                                    , parsedCycles = Permutation.parseCycles model.setSize newCyclesString
+                                }
+                            )
+                            model.permutationEdit
+                }
 
         SetPermutationName newName ->
             pure
                 { model
                     | permutationEdit =
-                        case model.permutationEdit of
-                            EditingSavedName oldName _ ->
-                                EditingSavedName oldName newName
-
-                            other ->
-                                other
+                        Maybe.map
+                            (\editState -> { editState | newName = newName })
+                            model.permutationEdit
                 }
 
-        AddPermutationToComposition name ->
-            pure { model | permutationNames = model.permutationNames ++ [ name ] }
+        CancelEdit ->
+            pure { model | permutationEdit = Nothing }
+
+        UpdatePermutation idx permutationUpdate ->
+            case permutationUpdate of
+                ResetPermutation ->
+                    pure
+                        { model
+                            | savedPermutations =
+                                Dict.update idx
+                                    (Maybe.map
+                                        (always
+                                            (let
+                                                p =
+                                                    Permutation.identity model.setSize
+                                             in
+                                             ( Permutation.showCycles p, p )
+                                            )
+                                        )
+                                    )
+                                    model.savedPermutations
+                        }
+
+                GeneratePermutation ->
+                    ( model, Cmd.map (UpdatePermutation idx << SetPermutation) (Permutation.generate model.setSize) )
+
+                InvertPermutation ->
+                    pure { model | savedPermutations = Dict.update idx (Maybe.map (Tuple.mapSecond Permutation.inverse)) model.savedPermutations }
+
+                StartPermutationEdit ( permName, perm ) ->
+                    ( { model
+                        | permutationEdit =
+                            let
+                                initialCyclesStr =
+                                    Permutation.showCycles perm
+                            in
+                            Just
+                                { originalName = permName
+                                , newName = permName
+                                , cyclesString = initialCyclesStr
+                                , parsedCycles = Permutation.parseCycles model.setSize initialCyclesStr
+                                }
+                      }
+                    , focusPermutationInput
+                    )
+
+                RemovePermutation ->
+                    pure
+                        { model
+                            | savedPermutations = Dict.remove idx model.savedPermutations
+                            , permutationIndices = List.filter (\i -> i /= idx) model.permutationIndices
+                        }
+
+                SetPermutation perm ->
+                    pure
+                        { model | savedPermutations = Dict.insert idx ( Permutation.showCycles perm, perm ) model.savedPermutations }
+
+        SaveEditedPermutation idx newPerm ->
+            case model.permutationEdit of
+                Just editState ->
+                    pure
+                        { model
+                            | savedPermutations =
+                                Dict.insert idx ( editState.newName, newPerm ) model.savedPermutations
+                            , permutationEdit = Nothing
+                        }
+
+                Nothing ->
+                    pure model
+
+        AddPermutationToComposition idx ->
+            pure { model | permutationIndices = model.permutationIndices ++ [ idx ] }
 
         RemovePermutationFromComposition i ->
-            pure { model | permutationNames = List.removeAt i model.permutationNames }
+            pure { model | permutationIndices = List.removeAt i model.permutationIndices }
 
 
 pure : Model -> ( Model, Cmd Msg )
@@ -312,19 +289,17 @@ updateImage f model =
     { model | canvasImage = f model.canvasImage }
 
 
-roundToNearest100 : Float -> Float
-roundToNearest100 x =
-    100 * toFloat (round (x / 100))
-
-
 view : Model -> Html Msg
-view { permutationNames, savedPermutations, setSize, canvasImage, permutationEdit } =
+view { permutationIndices, savedPermutations, setSize, canvasImage, permutationEdit } =
     let
         permCount =
-            List.length permutationNames
+            List.length permutationIndices
+
+        permutationsWithNames =
+            List.filterMap (\idx -> Dict.get idx savedPermutations) permutationIndices
 
         permutations =
-            List.filterMap (\name -> Dict.get name savedPermutations) permutationNames
+            List.map Tuple.second permutationsWithNames
 
         canvasWidth =
             permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX
@@ -336,12 +311,9 @@ view { permutationNames, savedPermutations, setSize, canvasImage, permutationEdi
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage setSize permCount permutations savedPermutations permutationEdit
+        [ imageConfigControls canvasImage setSize permCount permutationsWithNames savedPermutations permutationEdit
         , Canvas.toHtml ( canvasWidth, canvasHeight )
-            [ Mouse.onDown (.offsetPos >> StartAt)
-            , Mouse.onMove (.offsetPos >> MoveAt)
-            , Mouse.onUp (.offsetPos >> EndAt)
-            ]
+            []
             (Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight)
                 :: permutationLines canvasImage setSize permutations
                 :: permutationCircles canvasImage setSize permutations
@@ -350,8 +322,8 @@ view { permutationNames, savedPermutations, setSize, canvasImage, permutationEdi
         ]
 
 
-imageConfigControls : CanvasImage -> Int -> Int -> List Permutation -> Dict String Permutation -> EditState -> Html Msg
-imageConfigControls canvasImage setSize permCount permutations savedPermutations editState =
+imageConfigControls : CanvasImage -> Int -> Int -> List ( String, Permutation ) -> Dict Int ( String, Permutation ) -> Maybe EditState -> Html Msg
+imageConfigControls canvasImage setSize permCount permsWithNames savedPermutations maybeEditState =
     Html.div []
         [ Html.h3 [] [ Html.text "Controls" ]
         , Html.div []
@@ -435,7 +407,7 @@ imageConfigControls canvasImage setSize permCount permutations savedPermutations
         , Html.h3 [] [ Html.text "Saved" ]
         , Html.div [] <|
             List.map
-                (\( name, p ) -> viewSavedPermutation name p editState)
+                (\( idx, ( name, p ) ) -> viewSavedPermutation idx name p maybeEditState)
                 (Dict.toList savedPermutations)
         , Html.h3 [] [ Html.text "Composition" ]
         , Html.div []
@@ -443,10 +415,11 @@ imageConfigControls canvasImage setSize permCount permutations savedPermutations
             , Html.button [ HE.onClick ResetAll ] [ Html.text "Reset all" ]
             ]
         , Html.div [] <|
-            List.indexedMap (viewPermutation permCount) permutations
+            List.indexedMap (viewPermutation permCount) permsWithNames
         , let
             composition =
-                List.foldr Permutation.compose (Permutation.identity setSize) permutations
+                List.foldr Permutation.compose (Permutation.identity setSize) <|
+                    List.map Tuple.second permsWithNames
           in
           Html.div []
             [ Html.div []
@@ -470,35 +443,24 @@ imageConfigControls canvasImage setSize permCount permutations savedPermutations
         ]
 
 
-viewSavedPermutation : String -> Permutation -> EditState -> Html Msg
-viewSavedPermutation name perm editState =
-    case editState of
-        EditingSavedName oldName newName ->
-            if name == oldName then
-                viewSavedPermutationHelp name perm (Just newName) Nothing
+viewSavedPermutation : Int -> String -> Permutation -> Maybe EditState -> Html Msg
+viewSavedPermutation idx name perm maybeEditState =
+    case Maybe.filter (\editState -> editState.originalName == name) maybeEditState of
+        Just editState ->
+            viewPermutationEditor idx editState
 
-            else
-                viewSavedPermutationHelp name perm Nothing Nothing
-
-        EditingPermutation editedName cyclesStr parseRes ->
-            if name == editedName then
-                viewSavedPermutationHelp name perm Nothing (Just ( cyclesStr, parseRes ))
-
-            else
-                viewSavedPermutationHelp name perm Nothing Nothing
-
-        NotEditing ->
-            viewSavedPermutationHelp name perm Nothing Nothing
+        Nothing ->
+            viewPermutationPlain idx name perm
 
 
-permutationInputId : String
-permutationInputId =
+cyclesInputId : String
+cyclesInputId =
     "perm-input"
 
 
 focusPermutationInput : Cmd Msg
 focusPermutationInput =
-    Task.attempt (\_ -> NoOp) (Browser.Dom.focus permutationInputId)
+    Task.attempt (\_ -> NoOp) (Browser.Dom.focus cyclesInputId)
 
 
 onEnter : msg -> Attribute msg
@@ -516,10 +478,11 @@ onEnter msg =
         )
 
 
-viewPermutation : Int -> Int -> Permutation -> Html Msg
-viewPermutation permCount index perm =
+viewPermutation : Int -> Int -> ( String, Permutation ) -> Html Msg
+viewPermutation permCount index ( name, perm ) =
     Html.div [ HA.style "border" "dotted black 1px" ]
-        [ Html.button
+        [ Html.div [] [ Html.text name ]
+        , Html.button
             [ if index > 0 then
                 HE.onClick (ShiftPermutationLeft index)
 
@@ -547,79 +510,60 @@ viewPermutation permCount index perm =
         ]
 
 
-viewSavedPermutationHelp : String -> Permutation -> Maybe String -> Maybe ( String, Result String Permutation ) -> Html Msg
-viewSavedPermutationHelp name perm maybeEditedName maybeEditedPerm =
+viewPermutationPlain : Int -> String -> Permutation -> Html Msg
+viewPermutationPlain idx name perm =
     Html.div [ HA.style "border" "dotted black 1px" ]
-        [ viewSavedPermutationName name maybeEditedName
-        , viewSavedPermutationPermutation name maybeEditedPerm perm
+        [ Html.text name
+        , Html.div []
+            [ Html.button [ HE.onClick (UpdatePermutation idx ResetPermutation), HA.title "Reset to identity" ] [ Html.text "↺" ]
+            , Html.button [ HE.onClick (UpdatePermutation idx GeneratePermutation), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
+            , Html.button [ HE.onClick (UpdatePermutation idx InvertPermutation), HA.title "Invert" ] [ Html.text "🠔" ]
+            , Html.button [ HE.onClick (UpdatePermutation idx (StartPermutationEdit ( name, perm ))), HA.title "Edit permutation" ] [ Html.text "🖉" ]
+            , Html.button [ HE.onClick (AddPermutationToComposition idx) ] [ Html.text "Add" ]
+            , Html.text <| Permutation.showCycles perm
+            , Html.button [ HE.onClick (UpdatePermutation idx RemovePermutation), HA.title "Delete permutation", HA.style "float" "right" ] [ Html.text "✕" ]
+            ]
         ]
 
 
-viewSavedPermutationPermutation : String -> Maybe ( String, Result String Permutation ) -> Permutation -> Html Msg
-viewSavedPermutationPermutation name maybeEditedPerm perm =
-    case maybeEditedPerm of
-        Nothing ->
-            Html.div []
-                [ Html.button [ HE.onClick (UpdatePermutation name ResetPermutation), HA.title "Reset to identity" ] [ Html.text "↺" ]
-                , Html.button [ HE.onClick (UpdatePermutation name GeneratePermutation), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
-                , Html.button [ HE.onClick (UpdatePermutation name InvertPermutation), HA.title "Invert" ] [ Html.text "🠔" ]
-                , Html.button [ HE.onClick (UpdatePermutation name (StartPermutationEdit perm)), HA.title "Edit permutation" ] [ Html.text "🖉" ]
-                , Html.text <| Permutation.showCycles perm
-                , Html.button [ HE.onClick (AddPermutationToComposition name) ] [ Html.text "Add" ]
-                , Html.button [ HE.onClick (UpdatePermutation name RemovePermutation), HA.title "Delete permutation", HA.style "float" "right" ] [ Html.text "✕" ]
-                ]
-
-        Just ( cyclesStr, parseRes ) ->
-            let
-                cancelButton =
-                    Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
-
-                inputAttrs =
-                    [ HA.value cyclesStr
-                    , HE.onInput SetPermutationString
-                    , HA.id permutationInputId
-                    ]
-            in
-            case parseRes of
+viewPermutationEditor : Int -> EditState -> Html Msg
+viewPermutationEditor idx editState =
+    let
+        ( saveButtonOrError, addOnEnter ) =
+            case editState.parsedCycles of
                 Err err ->
-                    Html.div []
-                        [ Html.input inputAttrs []
-                        , cancelButton
-                        , Html.div [ HA.style "color" "red" ] [ Html.text err ]
-                        ]
+                    ( Html.div [ HA.style "color" "red" ] [ Html.text err ]
+                    , Basics.identity
+                    )
 
                 Ok newPerm ->
-                    Html.div []
-                        [ Html.input (onEnter (UpdatePermutation name (SaveEditedPermutation newPerm)) :: inputAttrs) []
-                        , cancelButton
-                        , Html.button
-                            [ HE.onClick (UpdatePermutation name (SaveEditedPermutation newPerm)) ]
-                            [ Html.text "Save" ]
-                        ]
-
-
-viewSavedPermutationName : String -> Maybe String -> Html Msg
-viewSavedPermutationName name maybeEditedName =
-    Html.div [] <|
-        case maybeEditedName of
-            Nothing ->
-                [ Html.text name
-                , Html.button [ HE.onClick (StartNameEdit name), HA.title "Edit Name" ] [ Html.text "🖉" ]
+                    ( Html.button [ HE.onClick (SaveEditedPermutation idx newPerm) ] [ Html.text "Save" ]
+                    , (::) (onEnter (SaveEditedPermutation idx newPerm))
+                    )
+    in
+    Html.div [ HA.style "border" "dotted black 1px" ]
+        [ Html.input
+            (addOnEnter
+                [ HA.value editState.newName
+                , HA.placeholder "Name"
+                , HE.onInput SetPermutationName
                 ]
-
-            Just newName ->
-                [ Html.input
-                    [ onEnter SaveNameEdit
-                    , HA.value newName
-                    , HE.onInput SetPermutationName
-                    , HA.id permutationInputId
+            )
+            []
+        , Html.div []
+            [ Html.input
+                (addOnEnter
+                    [ HA.value editState.cyclesString
+                    , HA.placeholder "Cycles"
+                    , HE.onInput SetPermutationCycles
+                    , HA.id cyclesInputId
                     ]
-                    []
-                , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
-                , Html.button
-                    [ HE.onClick SaveNameEdit ]
-                    [ Html.text "Save" ]
-                ]
+                )
+                []
+            , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
+            , saveButtonOrError
+            ]
+        ]
 
 
 permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
@@ -693,20 +637,6 @@ textAt =
         , align Center
         , baseLine Middle
         ]
-
-
-pointDistance : Point -> Point -> Float
-pointDistance ( x1, y1 ) ( x2, y2 ) =
-    sqrt ((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
-
-
-getCircleAt : Point -> Model -> Maybe Point
-getCircleAt p { circle, canvasImage } =
-    if pointDistance circle p <= canvasImage.circleRadius then
-        Just circle
-
-    else
-        Nothing
 
 
 subscriptions : Model -> Sub Msg
