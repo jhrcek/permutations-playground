@@ -29,8 +29,7 @@ main =
 
 
 type alias Model =
-    { circle : Point
-    , permutationIndices : List Int
+    { permutationIndices : List Int
     , savedPermutations : Dict Int ( String, Permutation )
     , setSize : Int
     , canvasImage : CanvasImage
@@ -45,6 +44,7 @@ type Msg
     | SetCircleRadius Float
     | SetPaddingX Float
     | SetPaddingY Float
+    | ResetImage
     | SetN Int
       -- Changing composition
     | ShiftPermutationLeft Int
@@ -101,19 +101,18 @@ defaultImage =
 
 
 init : Int -> () -> ( Model, Cmd Msg )
-init n () =
+init setSize () =
     let
         initialPerms =
-            [ Permutation.identity n
+            [ Permutation.identity setSize
             , Permutation (Array.fromList [ 1, 2, 0 ])
             , Permutation (Array.fromList [ 2, 0, 1 ])
             ]
                 |> List.indexedMap (\i p -> ( i, ( Permutation.showCycles p, p ) ))
     in
-    ( { circle = ( 100, 100 )
-      , permutationIndices = List.map Tuple.first initialPerms
+    ( { permutationIndices = List.map Tuple.first initialPerms
       , savedPermutations = Dict.fromList initialPerms
-      , setSize = n
+      , setSize = setSize
       , canvasImage = defaultImage
       , permutationEdit = Nothing
       }
@@ -141,6 +140,9 @@ update msg model =
 
         SetPaddingY newPaddingY ->
             pure (updateImage (\image -> { image | paddingY = newPaddingY }) model)
+
+        ResetImage ->
+            pure { model | canvasImage = defaultImage }
 
         SetN newN ->
             pure
@@ -354,7 +356,7 @@ view { permutationIndices, savedPermutations, setSize, canvasImage, permutationE
 imageConfigControls : CanvasImage -> Int -> Int -> List ( String, Permutation ) -> Dict Int ( String, Permutation ) -> Maybe EditState -> Html Msg
 imageConfigControls canvasImage setSize permCount permsWithNames savedPermutations maybeEditState =
     Html.div []
-        [ Html.h3 [] [ Html.text "Controls" ]
+        [ Html.h3 [] [ Html.text "Image controls" ]
         , Html.div []
             [ Html.label []
                 [ Html.text "horizontal"
@@ -420,6 +422,8 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
                     []
                 ]
             ]
+        , Html.button [ HE.onClick ResetImage ] [ Html.text "Reset" ]
+        , Html.h3 [] [ Html.text "Permutations" ]
         , Html.div []
             [ Html.label []
                 [ Html.text "Set size "
@@ -433,7 +437,6 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
                     []
                 ]
             ]
-        , Html.h3 [] [ Html.text "Saved" ]
         , Html.div [] [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add permutation" ] ]
         , Html.div [] <|
             List.map
@@ -678,11 +681,9 @@ subscriptions _ =
 -- TODO add a way to edit permutation without altering composition
 -- TODO CSS: align controls and buttons in one column
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
--- TODO add button to reset canvas visual controls
 -- TODO add button to shift perm right/left without affecting composition
 -- TODO when renaming, warn if newName already exists
 -- TODO when hovering over composed perm in panel, highlight the corresponding saved perm and vice versa
 -- TODO highlight perms unused in composition
 -- TODO make it possible to reorder perms in composition using DND
 -- TODO show additional detail about saved perms and composed perm (on hover?): order
-
