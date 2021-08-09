@@ -34,6 +34,7 @@ type alias Model =
     , setSize : Int
     , canvasImage : CanvasImage
     , permutationEdit : Maybe EditState
+    , highlightedIndex : Maybe Int
     }
 
 
@@ -45,7 +46,8 @@ type Msg
     | SetPaddingX Float
     | SetPaddingY Float
     | ResetImage
-    | SetN Int
+    | HighlightIndex Int
+    | ClearHighlight
       -- Changing composition
     | ShiftPermutationLeft Int
     | ShiftPermutationRight Int
@@ -54,6 +56,7 @@ type Msg
     | GenerateAll
     | ResetAll
       -- Changing saved perms
+    | SetSetSize Int
     | NewSavedPermutation
     | UpdatePermutation Int PermutationUpdate
     | CancelEdit
@@ -115,6 +118,7 @@ init setSize () =
       , setSize = setSize
       , canvasImage = defaultImage
       , permutationEdit = Nothing
+      , highlightedIndex = Nothing
       }
     , Cmd.none
     )
@@ -125,6 +129,12 @@ update msg model =
     case msg of
         NoOp ->
             pure model
+
+        HighlightIndex i ->
+            pure { model | highlightedIndex = Just i }
+
+        ClearHighlight ->
+            pure { model | highlightedIndex = Nothing }
 
         SetHorizontalDist newDomCodDist ->
             pure (updateImage (\image -> { image | horizontalDist = newDomCodDist }) model)
@@ -144,7 +154,7 @@ update msg model =
         ResetImage ->
             pure { model | canvasImage = defaultImage }
 
-        SetN newN ->
+        SetSetSize newN ->
             pure
                 { model
                     | setSize = newN
@@ -321,16 +331,21 @@ updateImage f model =
 
 
 view : Model -> Html Msg
-view { permutationIndices, savedPermutations, setSize, canvasImage, permutationEdit } =
+view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) =
     let
         permCount =
             List.length permutationIndices
 
-        permutationsWithNames =
-            List.filterMap (\idx -> Dict.get idx savedPermutations) permutationIndices
+        permsWitIndicesAndNames =
+            List.filterMap
+                (\savedIndex ->
+                    Maybe.map (\np -> ( savedIndex, np )) <|
+                        Dict.get savedIndex savedPermutations
+                )
+                permutationIndices
 
         permutations =
-            List.map Tuple.second permutationsWithNames
+            List.map (Tuple.second >> Tuple.second) permsWitIndicesAndNames
 
         canvasWidth =
             permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX
@@ -342,7 +357,7 @@ view { permutationIndices, savedPermutations, setSize, canvasImage, permutationE
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls canvasImage setSize permCount permutationsWithNames savedPermutations permutationEdit
+        [ imageConfigControls model permCount permutations permsWitIndicesAndNames
         , Canvas.toHtml ( canvasWidth, canvasHeight )
             []
             (Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight)
@@ -353,8 +368,8 @@ view { permutationIndices, savedPermutations, setSize, canvasImage, permutationE
         ]
 
 
-imageConfigControls : CanvasImage -> Int -> Int -> List ( String, Permutation ) -> Dict Int ( String, Permutation ) -> Maybe EditState -> Html Msg
-imageConfigControls canvasImage setSize permCount permsWithNames savedPermutations maybeEditState =
+imageConfigControls : Model -> Int -> List Permutation -> List ( Int, ( String, Permutation ) ) -> Html Msg
+imageConfigControls { savedPermutations, setSize, canvasImage, permutationEdit, highlightedIndex } permCount perms permsWithIdxsAndNames =
     Html.div []
         [ Html.h3 [] [ Html.text "Image controls" ]
         , Html.div []
@@ -432,7 +447,7 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
                     , HA.min "1"
                     , HA.max "50"
                     , HA.value (String.fromInt setSize)
-                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map (SetN << clamp 1 50) << String.toInt)
+                    , HE.onInput (Maybe.withDefault NoOp << Maybe.map (SetSetSize << clamp 1 50) << String.toInt)
                     ]
                     []
                 ]
@@ -440,7 +455,7 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
         , Html.div [] [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add permutation" ] ]
         , Html.div [] <|
             List.map
-                (\( idx, ( name, p ) ) -> viewSavedPermutation idx name p maybeEditState)
+                (\( idx, ( name, p ) ) -> viewSavedPermutation highlightedIndex idx name p permutationEdit)
                 (Dict.toList savedPermutations)
         , Html.h3 [] [ Html.text "Composition" ]
         , Html.div []
@@ -448,11 +463,10 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
             , Html.button [ HE.onClick ResetAll ] [ Html.text "Reset all" ]
             ]
         , Html.div [] <|
-            List.indexedMap (viewPermutation permCount) permsWithNames
+            List.indexedMap (viewPermutation highlightedIndex permCount) permsWithIdxsAndNames
         , let
             composition =
-                List.foldr Permutation.compose (Permutation.identity setSize) <|
-                    List.map Tuple.second permsWithNames
+                List.foldr Permutation.compose (Permutation.identity setSize) perms
           in
           Html.div []
             [ Html.div []
@@ -476,14 +490,30 @@ imageConfigControls canvasImage setSize permCount permsWithNames savedPermutatio
         ]
 
 
-viewSavedPermutation : Int -> String -> Permutation -> Maybe EditState -> Html Msg
-viewSavedPermutation idx name perm maybeEditState =
-    case Maybe.filter (\editState -> editState.editedIndex == idx) maybeEditState of
-        Just editState ->
-            viewPermutationEditor idx editState
+viewSavedPermutation : Maybe Int -> Int -> String -> Permutation -> Maybe EditState -> Html Msg
+viewSavedPermutation highlightedIndex savedIndex name perm maybeEditState =
+    permutationWrapper highlightedIndex savedIndex <|
+        case Maybe.filter (\editState -> editState.editedIndex == savedIndex) maybeEditState of
+            Just editState ->
+                viewPermutationEditor savedIndex editState
 
-        Nothing ->
-            viewPermutationPlain idx name perm
+            Nothing ->
+                viewPermutationPlain savedIndex name perm
+
+
+permutationWrapper : Maybe Int -> Int -> List (Html Msg) -> Html Msg
+permutationWrapper highlightedIndex savedIndex =
+    Html.div
+        [ HA.style "border" "dotted black 1px"
+        , HA.style "background-color" <|
+            if highlightedIndex == Just savedIndex then
+                "lightcyan"
+
+            else
+                "white"
+        , HE.onMouseEnter (HighlightIndex savedIndex)
+        , HE.onMouseLeave ClearHighlight
+        ]
 
 
 cyclesInputId : String
@@ -511,13 +541,14 @@ onEnter msg =
         )
 
 
-viewPermutation : Int -> Int -> ( String, Permutation ) -> Html Msg
-viewPermutation permCount index ( name, perm ) =
-    Html.div [ HA.style "border" "dotted black 1px" ]
+viewPermutation : Maybe Int -> Int -> Int -> ( Int, ( String, Permutation ) ) -> Html Msg
+viewPermutation highlightedIndex permCount indexWithinComposition ( savedIndex, ( name, perm ) ) =
+    permutationWrapper highlightedIndex
+        savedIndex
         [ Html.div [] [ Html.text name ]
         , Html.button
-            [ if index > 0 then
-                HE.onClick (ShiftPermutationLeft index)
+            [ if indexWithinComposition > 0 then
+                HE.onClick (ShiftPermutationLeft indexWithinComposition)
 
               else
                 HA.disabled True
@@ -525,8 +556,8 @@ viewPermutation permCount index ( name, perm ) =
             ]
             [ Html.text "«" ]
         , Html.button
-            [ if index < (permCount - 1) then
-                HE.onClick (ShiftPermutationRight index)
+            [ if indexWithinComposition < (permCount - 1) then
+                HE.onClick (ShiftPermutationRight indexWithinComposition)
 
               else
                 HA.disabled True
@@ -535,7 +566,7 @@ viewPermutation permCount index ( name, perm ) =
             [ Html.text "»" ]
         , Html.text <| Permutation.showCycles perm
         , Html.button
-            [ HE.onClick (RemovePermutationFromComposition index)
+            [ HE.onClick (RemovePermutationFromComposition indexWithinComposition)
             , HA.title "Delete permutation"
             , HA.style "float" "right"
             ]
@@ -543,23 +574,22 @@ viewPermutation permCount index ( name, perm ) =
         ]
 
 
-viewPermutationPlain : Int -> String -> Permutation -> Html Msg
+viewPermutationPlain : Int -> String -> Permutation -> List (Html Msg)
 viewPermutationPlain idx name perm =
-    Html.div [ HA.style "border" "dotted black 1px" ]
-        [ Html.text name
-        , Html.div []
-            [ Html.button [ HE.onClick (UpdatePermutation idx ResetPermutation), HA.title "Reset to identity" ] [ Html.text "↺" ]
-            , Html.button [ HE.onClick (UpdatePermutation idx GeneratePermutation), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
-            , Html.button [ HE.onClick (UpdatePermutation idx InvertPermutation), HA.title "Invert" ] [ Html.text "🠔" ]
-            , Html.button [ HE.onClick (UpdatePermutation idx StartPermutationEdit), HA.title "Edit permutation" ] [ Html.text "🖉" ]
-            , Html.button [ HE.onClick (AddPermutationToComposition idx) ] [ Html.text "Add" ]
-            , Html.text <| Permutation.showCycles perm
-            , Html.button [ HE.onClick (UpdatePermutation idx RemovePermutation), HA.title "Delete permutation", HA.style "float" "right" ] [ Html.text "✕" ]
-            ]
+    [ Html.text name
+    , Html.div []
+        [ Html.button [ HE.onClick (UpdatePermutation idx ResetPermutation), HA.title "Reset to identity" ] [ Html.text "↺" ]
+        , Html.button [ HE.onClick (UpdatePermutation idx GeneratePermutation), HA.title "Generate random permutation" ] [ Html.text "⚄" ]
+        , Html.button [ HE.onClick (UpdatePermutation idx InvertPermutation), HA.title "Invert" ] [ Html.text "🠔" ]
+        , Html.button [ HE.onClick (UpdatePermutation idx StartPermutationEdit), HA.title "Edit permutation" ] [ Html.text "🖉" ]
+        , Html.button [ HE.onClick (AddPermutationToComposition idx) ] [ Html.text "Add" ]
+        , Html.text <| Permutation.showCycles perm
+        , Html.button [ HE.onClick (UpdatePermutation idx RemovePermutation), HA.title "Delete permutation", HA.style "float" "right" ] [ Html.text "✕" ]
         ]
+    ]
 
 
-viewPermutationEditor : Int -> EditState -> Html Msg
+viewPermutationEditor : Int -> EditState -> List (Html Msg)
 viewPermutationEditor idx editState =
     let
         ( saveButtonOrError, addOnEnter ) =
@@ -574,29 +604,28 @@ viewPermutationEditor idx editState =
                     , (::) (onEnter (SaveEditedPermutation idx newPerm))
                     )
     in
-    Html.div [ HA.style "border" "dotted black 1px" ]
+    [ Html.input
+        (addOnEnter
+            [ HA.value editState.newName
+            , HA.placeholder "Name"
+            , HE.onInput SetPermutationName
+            ]
+        )
+        []
+    , Html.div []
         [ Html.input
             (addOnEnter
-                [ HA.value editState.newName
-                , HA.placeholder "Name"
-                , HE.onInput SetPermutationName
+                [ HA.value editState.cyclesString
+                , HA.placeholder "Cycles"
+                , HE.onInput SetPermutationCycles
+                , HA.id cyclesInputId
                 ]
             )
             []
-        , Html.div []
-            [ Html.input
-                (addOnEnter
-                    [ HA.value editState.cyclesString
-                    , HA.placeholder "Cycles"
-                    , HE.onInput SetPermutationCycles
-                    , HA.id cyclesInputId
-                    ]
-                )
-                []
-            , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
-            , saveButtonOrError
-            ]
+        , Html.button [ HE.onClick CancelEdit ] [ Html.text "Cancel" ]
+        , saveButtonOrError
         ]
+    ]
 
 
 permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
@@ -683,7 +712,6 @@ subscriptions _ =
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
 -- TODO add button to shift perm right/left without affecting composition
 -- TODO when renaming, warn if newName already exists
--- TODO when hovering over composed perm in panel, highlight the corresponding saved perm and vice versa
 -- TODO highlight perms unused in composition
 -- TODO make it possible to reorder perms in composition using DND
 -- TODO show additional detail about saved perms and composed perm (on hover?): order
