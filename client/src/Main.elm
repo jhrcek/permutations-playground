@@ -681,3 +681,8 @@ subscriptions _ =
 -- TODO add button to reset canvas visual controls
 -- TODO add button to shift perm right/left without affecting composition
 -- TODO when renaming, warn if newName already exists
+-- TODO when hovering over composed perm in panel, highlight the corresponding saved perm and vice versa
+-- TODO highlight perms unused in composition
+-- TODO make it possible to reorder perms in composition using DND
+-- TODO show additional detail about saved perms and composed perm (on hover?): order
+
