@@ -21,7 +21,7 @@ import Task
 main : Program () Model Msg
 main =
     Browser.element
-        { init = init 3
+        { init = init
         , update = update
         , subscriptions = subscriptions
         , view = view
@@ -104,24 +104,23 @@ defaultImage =
     }
 
 
-init : Int -> () -> ( Model, Cmd Msg )
-init setSize () =
+init : () -> ( Model, Cmd Msg )
+init () =
     let
-        initialPerms =
-            [ Permutation.identity setSize
-            , Permutation (Array.fromList [ 1, 2, 0 ])
-            , Permutation (Array.fromList [ 2, 0, 1 ])
-            ]
-                |> List.indexedMap (\i p -> ( i, ( Permutation.showCycles p, p ) ))
+        setSize =
+            4
+
+        permCount =
+            3
     in
-    ( { permutationIndices = List.map Tuple.first initialPerms
-      , savedPermutations = Dict.fromList initialPerms
+    ( { permutationIndices = []
+      , savedPermutations = Dict.empty
       , setSize = setSize
       , canvasImage = defaultImage
       , permutationEdit = Nothing
       , highlightedIndex = Nothing
       }
-    , Cmd.none
+    , Cmd.map SetPermutations (Permutation.generateMany setSize permCount)
     )
 
 
