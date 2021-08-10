@@ -179,9 +179,42 @@ update msg model =
         GenerateAll ->
             ( model, Cmd.map SetPermutations (Permutation.generateMany model.setSize (List.length model.permutationIndices)) )
 
-        SetPermutations _ ->
-            -- TODO make this work under the name "named permutation" model
-            pure model
+        SetPermutations newPerms ->
+            let
+                ( newSavedPerms, newPermIndices ) =
+                    List.foldr
+                        (\newPerm ( savedPerms, permIndices ) ->
+                            case
+                                -- Before adding new perm to saved ones, check if we can reuse one of the saved ones
+                                -- TODO this is quadratic. Can we do better?
+                                Dict.toList savedPerms
+                                    |> List.find (\( _, ( _, p ) ) -> newPerm == p)
+                            of
+                                Just ( existingIdx, _ ) ->
+                                    ( savedPerms
+                                    , existingIdx :: permIndices
+                                    )
+
+                                Nothing ->
+                                    let
+                                        newPermIndex =
+                                            Dict.keys savedPerms |> List.maximum |> Maybe.withDefault 0 |> (+) 1
+
+                                        newPermName =
+                                            "p" ++ String.fromInt newPermIndex
+                                    in
+                                    ( Dict.insert newPermIndex ( newPermName, newPerm ) savedPerms
+                                    , newPermIndex :: permIndices
+                                    )
+                        )
+                        ( model.savedPermutations, [] )
+                        newPerms
+            in
+            pure
+                { model
+                    | permutationIndices = newPermIndices
+                    , savedPermutations = newSavedPerms
+                }
 
         ResetAll ->
             pure
@@ -715,3 +748,4 @@ subscriptions _ =
 -- TODO highlight perms unused in composition
 -- TODO make it possible to reorder perms in composition using DND
 -- TODO show additional detail about saved perms and composed perm (on hover?): order
+-- TODO allow removing duplicate saved perms
