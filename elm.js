@@ -4974,7 +4974,7 @@ var $elm$core$Array$treeFromBuilder = F2(
 	});
 var $elm$core$Array$builderToArray = F2(
 	function (reverseNodeList, builder) {
-		if (!builder.f) {
+		if (!builder.g) {
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
 				$elm$core$Elm$JsArray$length(builder.i),
@@ -4982,11 +4982,11 @@ var $elm$core$Array$builderToArray = F2(
 				$elm$core$Elm$JsArray$empty,
 				builder.i);
 		} else {
-			var treeLen = builder.f * $elm$core$Array$branchFactor;
+			var treeLen = builder.g * $elm$core$Array$branchFactor;
 			var depth = $elm$core$Basics$floor(
 				A2($elm$core$Basics$logBase, $elm$core$Array$branchFactor, treeLen - 1));
 			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.j) : builder.j;
-			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.f);
+			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.g);
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
 				$elm$core$Elm$JsArray$length(builder.i) + treeLen,
@@ -5005,7 +5005,7 @@ var $elm$core$Array$initializeHelp = F5(
 				return A2(
 					$elm$core$Array$builderToArray,
 					false,
-					{j: nodeList, f: (len / $elm$core$Array$branchFactor) | 0, i: tail});
+					{j: nodeList, g: (len / $elm$core$Array$branchFactor) | 0, i: tail});
 			} else {
 				var leaf = $elm$core$Array$Leaf(
 					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
@@ -5351,455 +5351,18 @@ var $elm$core$Task$perform = F2(
 			A2($elm$core$Task$map, toMessage, task));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $author$project$Permutation$Permutation = $elm$core$Basics$identity;
-var $author$project$Main$defaultImage = {R: 15, u: 100, w: 100, x: 100, z: 100};
-var $elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
-			var jsArray = _v0.a;
-			var remainingItems = _v0.b;
-			if (_Utils_cmp(
-				$elm$core$Elm$JsArray$length(jsArray),
-				$elm$core$Array$branchFactor) < 0) {
-				return A2(
-					$elm$core$Array$builderToArray,
-					true,
-					{j: nodeList, f: nodeListSize, i: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					$elm$core$List$cons,
-					$elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var $elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return $elm$core$Array$empty;
-	} else {
-		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
+var $author$project$Main$SetPermutations = function (a) {
+	return {$: 22, a: a};
 };
+var $author$project$Main$defaultImage = {R: 15, u: 100, w: 100, x: 100, z: 100};
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-var $elm$core$Dict$Black = 1;
-var $elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: -1, a: a, b: b, c: c, d: d, e: e};
-	});
-var $elm$core$Dict$Red = 0;
-var $elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === -1) && (!right.a)) {
-			var _v1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === -1) && (!left.a)) {
-				var _v3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					0,
-					key,
-					value,
-					A5($elm$core$Dict$RBNode_elm_builtin, 1, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === -1) && (!left.a)) && (left.d.$ === -1)) && (!left.d.a)) {
-				var _v5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _v6 = left.d;
-				var _v7 = _v6.a;
-				var llK = _v6.b;
-				var llV = _v6.c;
-				var llLeft = _v6.d;
-				var llRight = _v6.e;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					0,
-					lK,
-					lV,
-					A5($elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, 1, key, value, lRight, right));
-			} else {
-				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var $elm$core$Basics$compare = _Utils_compare;
-var $elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === -2) {
-			return A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _v1 = A2($elm$core$Basics$compare, key, nKey);
-			switch (_v1) {
-				case 0:
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3($elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 1:
-					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3($elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var $elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
-		if ((_v0.$ === -1) && (!_v0.a)) {
-			var _v1 = _v0.a;
-			var k = _v0.b;
-			var v = _v0.c;
-			var l = _v0.d;
-			var r = _v0.e;
-			return A5($elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
-		} else {
-			var x = _v0;
-			return x;
-		}
-	});
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
-var $author$project$Permutation$identity = function (n) {
-	return A2($elm$core$Array$initialize, n, $elm$core$Basics$identity);
-};
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $elm$core$Basics$not = _Basics_not;
-var $elm$core$List$all = F2(
-	function (isOkay, list) {
-		return !A2(
-			$elm$core$List$any,
-			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
-			list);
-	});
-var $elm$core$String$concat = function (strings) {
-	return A2($elm$core$String$join, '', strings);
-};
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Basics$neq = _Utils_notEqual;
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (!maybeValue.$) {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Basics$ge = _Utils_ge;
-var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var $elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
-		while (true) {
-			var pos = $elm$core$Array$bitMask & (index >>> shift);
-			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (!_v0.$) {
-				var subTree = _v0.a;
-				var $temp$shift = shift - $elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
-			} else {
-				var values = _v0.a;
-				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
-			}
-		}
-	});
-var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var $elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var $elm$core$Array$get = F2(
-	function (index, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
-			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
-			A3($elm$core$Array$getHelp, startShift, index, tree)));
-	});
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
-var $elm$core$Array$length = function (_v0) {
-	var len = _v0.a;
-	return len;
-};
-var $author$project$Permutation$size = function (_v0) {
-	var perm = _v0;
-	return $elm$core$Array$length(perm);
-};
-var $elm_community$list_extra$List$Extra$unfoldr = F2(
-	function (f, seed) {
-		var _v0 = f(seed);
-		if (_v0.$ === 1) {
-			return _List_Nil;
-		} else {
-			var _v1 = _v0.a;
-			var a = _v1.a;
-			var b = _v1.b;
-			return A2(
-				$elm$core$List$cons,
-				a,
-				A2($elm_community$list_extra$List$Extra$unfoldr, f, b));
-		}
-	});
-var $author$project$Permutation$toCycles = function (p) {
-	var perm = p;
-	var unrollCycle = function (start) {
-		return A2(
-			$elm$core$List$cons,
-			start,
-			A2(
-				$elm_community$list_extra$List$Extra$unfoldr,
-				function (i) {
-					return A2(
-						$elm$core$Maybe$andThen,
-						function (j) {
-							return (!_Utils_eq(j, start)) ? $elm$core$Maybe$Just(
-								_Utils_Tuple2(j, j)) : $elm$core$Maybe$Nothing;
-						},
-						A2($elm$core$Array$get, i, perm));
-				},
-				start));
-	};
-	var f = F2(
-		function (n, cs) {
-			return A2(
-				$elm$core$List$any,
-				$elm$core$List$member(n),
-				cs) ? cs : A2(
-				$elm$core$List$cons,
-				unrollCycle(n),
-				cs);
-		});
-	return $elm$core$List$reverse(
-		A3(
-			$elm$core$List$foldl,
-			f,
-			_List_Nil,
-			A2(
-				$elm$core$List$range,
-				0,
-				$author$project$Permutation$size(p) - 1)));
-};
-var $author$project$Permutation$showCycles = function (p) {
-	var cs = $author$project$Permutation$toCycles(p);
-	return A2(
-		$elm$core$List$all,
-		function (c) {
-			return $elm$core$List$length(c) === 1;
-		},
-		cs) ? '()' : $elm$core$String$concat(
-		A2(
-			$elm$core$List$map,
-			function (cyc) {
-				return '(' + (A2(
-					$elm$core$String$join,
-					' ',
-					A2(
-						$elm$core$List$map,
-						A2(
-							$elm$core$Basics$composeL,
-							$elm$core$String$fromInt,
-							$elm$core$Basics$add(1)),
-						cyc)) + ')');
-			},
-			A2(
-				$elm$core$List$filter,
-				function (c) {
-					return $elm$core$List$length(c) !== 1;
-				},
-				cs)));
-};
-var $author$project$Main$init = F2(
-	function (setSize, _v0) {
-		var initialPerms = A2(
-			$elm$core$List$indexedMap,
-			F2(
-				function (i, p) {
-					return _Utils_Tuple2(
-						i,
-						_Utils_Tuple2(
-							$author$project$Permutation$showCycles(p),
-							p));
-				}),
-			_List_fromArray(
-				[
-					$author$project$Permutation$identity(setSize),
-					$elm$core$Array$fromList(
-					_List_fromArray(
-						[1, 2, 0])),
-					$elm$core$Array$fromList(
-					_List_fromArray(
-						[2, 0, 1]))
-				]));
-		return _Utils_Tuple2(
-			{
-				E: $author$project$Main$defaultImage,
-				T: $elm$core$Maybe$Nothing,
-				o: $elm$core$Maybe$Nothing,
-				g: A2($elm$core$List$map, $elm$core$Tuple$first, initialPerms),
-				e: $elm$core$Dict$fromList(initialPerms),
-				p: setSize
-			},
-			$elm$core$Platform$Cmd$none);
-	});
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
-};
-var $author$project$Main$SetPermutation = function (a) {
-	return {$: 5, a: a};
-};
-var $author$project$Main$SetPermutations = function (a) {
-	return {$: 21, a: a};
-};
-var $author$project$Main$UpdatePermutation = F2(
-	function (a, b) {
-		return {$: 16, a: a, b: b};
-	});
-var $elm$core$Basics$always = F2(
-	function (a, _v0) {
-		return a;
-	});
-var $author$project$Main$NoOp = {$: 22};
-var $elm$core$Task$onError = _Scheduler_onError;
-var $elm$core$Task$attempt = F2(
-	function (resultToMessage, task) {
-		return $elm$core$Task$command(
-			A2(
-				$elm$core$Task$onError,
-				A2(
-					$elm$core$Basics$composeL,
-					A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
-					$elm$core$Result$Err),
-				A2(
-					$elm$core$Task$andThen,
-					A2(
-						$elm$core$Basics$composeL,
-						A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
-						$elm$core$Result$Ok),
-					task)));
-	});
-var $author$project$Main$cyclesInputId = 'perm-input';
-var $elm$browser$Browser$Dom$focus = _Browser_call('focus');
-var $author$project$Main$focusPermutationInput = A2(
-	$elm$core$Task$attempt,
-	function (_v0) {
-		return $author$project$Main$NoOp;
-	},
-	$elm$browser$Browser$Dom$focus($author$project$Main$cyclesInputId));
 var $elm$random$Random$Generate = $elm$core$Basics$identity;
 var $elm$random$Random$Seed = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
 var $elm$random$Random$next = function (_v0) {
 	var state0 = _v0.a;
 	var incr = _v0.b;
@@ -5892,11 +5455,48 @@ var $elm$random$Random$generate = F2(
 		return $elm$random$Random$command(
 			A2($elm$random$Random$map, tagger, generator));
 	});
+var $author$project$Permutation$Permutation = $elm$core$Basics$identity;
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
 			f(x));
 	});
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{j: nodeList, g: nodeListSize, i: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
@@ -6016,12 +5616,6 @@ var $author$project$Permutation$generateOne = function (setSize) {
 		$elm_community$random_extra$Random$List$shuffle(
 			A2($elm$core$List$range, 0, setSize - 1)));
 };
-var $author$project$Permutation$generate = function (n) {
-	return A2(
-		$elm$random$Random$generate,
-		$elm$core$Basics$identity,
-		$author$project$Permutation$generateOne(n));
-};
 var $elm$random$Random$listHelp = F4(
 	function (revList, n, gen, seed) {
 		listHelp:
@@ -6061,6 +5655,269 @@ var $author$project$Permutation$generateMany = F2(
 				listLength,
 				$author$project$Permutation$generateOne(setSize)));
 	});
+var $elm$core$Platform$Cmd$map = _Platform_map;
+var $author$project$Main$init = function (_v0) {
+	var setSize = 4;
+	var permCount = 3;
+	return _Utils_Tuple2(
+		{E: $author$project$Main$defaultImage, T: $elm$core$Maybe$Nothing, o: $elm$core$Maybe$Nothing, f: _List_Nil, e: $elm$core$Dict$empty, p: setSize},
+		A2(
+			$elm$core$Platform$Cmd$map,
+			$author$project$Main$SetPermutations,
+			A2($author$project$Permutation$generateMany, setSize, permCount)));
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$subscriptions = function (_v0) {
+	return $elm$core$Platform$Sub$none;
+};
+var $author$project$Main$SetPermutation = function (a) {
+	return {$: 5, a: a};
+};
+var $author$project$Main$UpdatePermutation = F2(
+	function (a, b) {
+		return {$: 17, a: a, b: b};
+	});
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (!maybeValue.$) {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === -2) {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$Dict$Black = 1;
+var $elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: -1, a: a, b: b, c: c, d: d, e: e};
+	});
+var $elm$core$Dict$Red = 0;
+var $elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === -1) && (!right.a)) {
+			var _v1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === -1) && (!left.a)) {
+				var _v3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					0,
+					key,
+					value,
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === -1) && (!left.a)) && (left.d.$ === -1)) && (!left.d.a)) {
+				var _v5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					0,
+					lK,
+					lV,
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, 1, key, value, lRight, right));
+			} else {
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === -2) {
+			return A5($elm$core$Dict$RBNode_elm_builtin, 0, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1) {
+				case 0:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 1:
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var $elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === -1) && (!_v0.a)) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, 1, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$core$Dict$filter = F2(
+	function (isGood, dict) {
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (k, v, d) {
+					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
+				}),
+			$elm$core$Dict$empty,
+			dict);
+	});
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm_community$list_extra$List$Extra$find = F2(
+	function (predicate, list) {
+		find:
+		while (true) {
+			if (!list.b) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var first = list.a;
+				var rest = list.b;
+				if (predicate(first)) {
+					return $elm$core$Maybe$Just(first);
+				} else {
+					var $temp$predicate = predicate,
+						$temp$list = rest;
+					predicate = $temp$predicate;
+					list = $temp$list;
+					continue find;
+				}
+			}
+		}
+	});
+var $author$project$Main$NoOp = {$: 23};
+var $elm$core$Task$onError = _Scheduler_onError;
+var $elm$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return $elm$core$Task$command(
+			A2(
+				$elm$core$Task$onError,
+				A2(
+					$elm$core$Basics$composeL,
+					A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+					$elm$core$Result$Err),
+				A2(
+					$elm$core$Task$andThen,
+					A2(
+						$elm$core$Basics$composeL,
+						A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+						$elm$core$Result$Ok),
+					task)));
+	});
+var $author$project$Main$cyclesInputId = 'perm-input';
+var $elm$browser$Browser$Dom$focus = _Browser_call('focus');
+var $author$project$Main$focusPermutationInput = A2(
+	$elm$core$Task$attempt,
+	function (_v0) {
+		return $author$project$Main$NoOp;
+	},
+	$elm$browser$Browser$Dom$focus($author$project$Main$cyclesInputId));
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $author$project$Permutation$generate = function (n) {
+	return A2(
+		$elm$random$Random$generate,
+		$elm$core$Basics$identity,
+		$author$project$Permutation$generateOne(n));
+};
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
 		get:
@@ -6092,6 +5949,9 @@ var $elm$core$Dict$get = F2(
 			}
 		}
 	});
+var $author$project$Permutation$identity = function (n) {
+	return A2($elm$core$Array$initialize, n, $elm$core$Basics$identity);
+};
 var $elm$core$Array$toIndexedList = function (array) {
 	var len = array.a;
 	var helper = F2(
@@ -6132,7 +5992,6 @@ var $elm$core$Maybe$map = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $elm$core$Platform$Cmd$map = _Platform_map;
 var $elm$core$Tuple$mapSecond = F2(
 	function (func, _v0) {
 		var x = _v0.a;
@@ -6151,6 +6010,37 @@ var $elm$core$List$maximum = function (list) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$core$Result$mapError = F2(
 	function (f, result) {
 		if (!result.$) {
@@ -6282,6 +6172,14 @@ var $elm$core$List$append = F2(
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
+var $elm$core$Basics$not = _Basics_not;
+var $elm$core$List$all = F2(
+	function (isOkay, list) {
+		return !A2(
+			$elm$core$List$any,
+			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
+			list);
+	});
 var $elm$parser$Parser$ExpectingInt = {$: 1};
 var $elm$parser$Parser$Advanced$consumeBase = _Parser_consumeBase;
 var $elm$parser$Parser$Advanced$consumeBase16 = _Parser_consumeBase16;
@@ -7216,6 +7114,8 @@ var $author$project$Permutation$parseCycles = F2(
 				$author$project$Permutation$parser(n),
 				input));
 	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$pure = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
@@ -7744,6 +7644,140 @@ var $elm_community$list_extra$List$Extra$removeAt = F2(
 			}
 		}
 	});
+var $elm$core$String$concat = function (strings) {
+	return A2($elm$core$String$join, '', strings);
+};
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (!_v0.$) {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
+	});
+var $elm$core$Array$length = function (_v0) {
+	var len = _v0.a;
+	return len;
+};
+var $author$project$Permutation$size = function (_v0) {
+	var perm = _v0;
+	return $elm$core$Array$length(perm);
+};
+var $elm_community$list_extra$List$Extra$unfoldr = F2(
+	function (f, seed) {
+		var _v0 = f(seed);
+		if (_v0.$ === 1) {
+			return _List_Nil;
+		} else {
+			var _v1 = _v0.a;
+			var a = _v1.a;
+			var b = _v1.b;
+			return A2(
+				$elm$core$List$cons,
+				a,
+				A2($elm_community$list_extra$List$Extra$unfoldr, f, b));
+		}
+	});
+var $author$project$Permutation$toCycles = function (p) {
+	var perm = p;
+	var unrollCycle = function (start) {
+		return A2(
+			$elm$core$List$cons,
+			start,
+			A2(
+				$elm_community$list_extra$List$Extra$unfoldr,
+				function (i) {
+					return A2(
+						$elm$core$Maybe$andThen,
+						function (j) {
+							return (!_Utils_eq(j, start)) ? $elm$core$Maybe$Just(
+								_Utils_Tuple2(j, j)) : $elm$core$Maybe$Nothing;
+						},
+						A2($elm$core$Array$get, i, perm));
+				},
+				start));
+	};
+	var f = F2(
+		function (n, cs) {
+			return A2(
+				$elm$core$List$any,
+				$elm$core$List$member(n),
+				cs) ? cs : A2(
+				$elm$core$List$cons,
+				unrollCycle(n),
+				cs);
+		});
+	return $elm$core$List$reverse(
+		A3(
+			$elm$core$List$foldl,
+			f,
+			_List_Nil,
+			A2(
+				$elm$core$List$range,
+				0,
+				$author$project$Permutation$size(p) - 1)));
+};
+var $author$project$Permutation$showCycles = function (p) {
+	var cs = $author$project$Permutation$toCycles(p);
+	return A2(
+		$elm$core$List$all,
+		function (c) {
+			return $elm$core$List$length(c) === 1;
+		},
+		cs) ? '()' : $elm$core$String$concat(
+		A2(
+			$elm$core$List$map,
+			function (cyc) {
+				return '(' + (A2(
+					$elm$core$String$join,
+					' ',
+					A2(
+						$elm$core$List$map,
+						A2(
+							$elm$core$Basics$composeL,
+							$elm$core$String$fromInt,
+							$elm$core$Basics$add(1)),
+						cyc)) + ')');
+			},
+			A2(
+				$elm$core$List$filter,
+				function (c) {
+					return $elm$core$List$length(c) !== 1;
+				},
+				cs)));
+};
 var $elm_community$list_extra$List$Extra$splitAt = F2(
 	function (n, xs) {
 		return _Utils_Tuple2(
@@ -7828,7 +7862,7 @@ var $author$project$Main$updateImage = F2(
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 22:
+			case 23:
 				return $author$project$Main$pure(model);
 			case 6:
 				var i = msg.a;
@@ -7909,10 +7943,10 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							g: A2(
+							f: A2(
 								$elm$core$List$map,
 								$elm$core$Basics$always(0),
-								model.g),
+								model.f),
 							e: $elm$core$Dict$fromList(
 								_List_fromArray(
 									[
@@ -7930,17 +7964,17 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							g: A3($elm_community$list_extra$List$Extra$swapAt, i - 1, i, model.g)
+							f: A3($elm_community$list_extra$List$Extra$swapAt, i - 1, i, model.f)
 						})) : $author$project$Main$pure(model);
 			case 9:
 				var i = msg.a;
 				return (_Utils_cmp(
 					i,
-					$elm$core$List$length(model.g)) < 0) ? $author$project$Main$pure(
+					$elm$core$List$length(model.f)) < 0) ? $author$project$Main$pure(
 					_Utils_update(
 						model,
 						{
-							g: A3($elm_community$list_extra$List$Extra$swapAt, i, i + 1, model.g)
+							f: A3($elm_community$list_extra$List$Extra$swapAt, i, i + 1, model.f)
 						})) : $author$project$Main$pure(model);
 			case 12:
 				return _Utils_Tuple2(
@@ -7951,18 +7985,62 @@ var $author$project$Main$update = F2(
 						A2(
 							$author$project$Permutation$generateMany,
 							model.p,
-							$elm$core$List$length(model.g))));
-			case 21:
-				return $author$project$Main$pure(model);
+							$elm$core$List$length(model.f))));
+			case 22:
+				var newPerms = msg.a;
+				var _v1 = A3(
+					$elm$core$List$foldr,
+					F2(
+						function (newPerm, _v2) {
+							var savedPerms = _v2.a;
+							var permIndices = _v2.b;
+							var _v3 = A2(
+								$elm_community$list_extra$List$Extra$find,
+								function (_v4) {
+									var _v5 = _v4.b;
+									var p = _v5.b;
+									return _Utils_eq(newPerm, p);
+								},
+								$elm$core$Dict$toList(savedPerms));
+							if (!_v3.$) {
+								var _v6 = _v3.a;
+								var existingIdx = _v6.a;
+								return _Utils_Tuple2(
+									savedPerms,
+									A2($elm$core$List$cons, existingIdx, permIndices));
+							} else {
+								var newPermIndex = 1 + A2(
+									$elm$core$Maybe$withDefault,
+									0,
+									$elm$core$List$maximum(
+										$elm$core$Dict$keys(savedPerms)));
+								var newPermName = 'p' + $elm$core$String$fromInt(newPermIndex);
+								return _Utils_Tuple2(
+									A3(
+										$elm$core$Dict$insert,
+										newPermIndex,
+										_Utils_Tuple2(newPermName, newPerm),
+										savedPerms),
+									A2($elm$core$List$cons, newPermIndex, permIndices));
+							}
+						}),
+					_Utils_Tuple2(model.e, _List_Nil),
+					newPerms);
+				var newSavedPerms = _v1.a;
+				var newPermIndices = _v1.b;
+				return $author$project$Main$pure(
+					_Utils_update(
+						model,
+						{f: newPermIndices, e: newSavedPerms}));
 			case 13:
 				return $author$project$Main$pure(
 					_Utils_update(
 						model,
 						{
-							g: A2(
+							f: A2(
 								$elm$core$List$map,
 								$elm$core$Basics$always(0),
-								model.g),
+								model.f),
 							e: A3(
 								$elm$core$Dict$insert,
 								0,
@@ -7971,7 +8049,7 @@ var $author$project$Main$update = F2(
 									$author$project$Permutation$identity(model.p)),
 								model.e)
 						}));
-			case 20:
+			case 21:
 				var newCyclesString = msg.a;
 				return $author$project$Main$pure(
 					_Utils_update(
@@ -7989,7 +8067,7 @@ var $author$project$Main$update = F2(
 								},
 								model.o)
 						}));
-			case 19:
+			case 20:
 				var newName = msg.a;
 				return $author$project$Main$pure(
 					_Utils_update(
@@ -8004,12 +8082,12 @@ var $author$project$Main$update = F2(
 								},
 								model.o)
 						}));
-			case 17:
+			case 18:
 				return $author$project$Main$pure(
 					_Utils_update(
 						model,
 						{o: $elm$core$Maybe$Nothing}));
-			case 16:
+			case 17:
 				var idx = msg.a;
 				var permutationUpdate = msg.b;
 				switch (permutationUpdate.$) {
@@ -8060,9 +8138,9 @@ var $author$project$Main$update = F2(
 								{
 									o: A2(
 										$elm$core$Maybe$andThen,
-										function (_v2) {
-											var name = _v2.a;
-											var perm = _v2.b;
+										function (_v8) {
+											var name = _v8.a;
+											var perm = _v8.b;
 											var initialCyclesStr = $author$project$Permutation$showCycles(perm);
 											return $elm$core$Maybe$Just(
 												{
@@ -8080,12 +8158,12 @@ var $author$project$Main$update = F2(
 							_Utils_update(
 								model,
 								{
-									g: A2(
+									f: A2(
 										$elm$core$List$filter,
 										function (i) {
 											return !_Utils_eq(i, idx);
 										},
-										model.g),
+										model.f),
 									e: A2($elm$core$Dict$remove, idx, model.e)
 								}));
 					default:
@@ -8103,12 +8181,12 @@ var $author$project$Main$update = F2(
 										model.e)
 								}));
 				}
-			case 18:
+			case 19:
 				var idx = msg.a;
 				var newPerm = msg.b;
-				var _v3 = model.o;
-				if (!_v3.$) {
-					var editState = _v3.a;
+				var _v9 = model.o;
+				if (!_v9.$) {
+					var editState = _v9.a;
 					return $author$project$Main$pure(
 						_Utils_update(
 							model,
@@ -8129,8 +8207,8 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							g: _Utils_ap(
-								model.g,
+							f: _Utils_ap(
+								model.f,
 								_List_fromArray(
 									[idx]))
 						}));
@@ -8140,9 +8218,9 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							g: A2($elm_community$list_extra$List$Extra$removeAt, i, model.g)
+							f: A2($elm_community$list_extra$List$Extra$removeAt, i, model.f)
 						}));
-			default:
+			case 15:
 				var newPermIndex = 1 + A2(
 					$elm$core$Maybe$withDefault,
 					0,
@@ -8166,6 +8244,19 @@ var $author$project$Main$update = F2(
 								$elm$core$Dict$insert,
 								newPermIndex,
 								_Utils_Tuple2(newPermName, newPerm),
+								model.e)
+						}));
+			default:
+				return $author$project$Main$pure(
+					_Utils_update(
+						model,
+						{
+							e: A2(
+								$elm$core$Dict$filter,
+								F2(
+									function (idx, _v10) {
+										return A2($elm$core$List$member, idx, model.f);
+									}),
 								model.e)
 						}));
 		}
@@ -8203,6 +8294,7 @@ var $elm$core$List$filterMap = F2(
 			_List_Nil,
 			xs);
 	});
+var $author$project$Main$DeleteUnused = {$: 16};
 var $author$project$Main$GenerateAll = {$: 12};
 var $author$project$Main$NewSavedPermutation = {$: 15};
 var $author$project$Main$ResetAll = {$: 13};
@@ -8347,6 +8439,7 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Main$RemovePermutationFromComposition = function (a) {
@@ -8402,7 +8495,6 @@ var $author$project$Main$permutationWrapper = F2(
 					$elm$html$Html$Events$onMouseLeave($author$project$Main$ClearHighlight)
 				]));
 	});
-var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $author$project$Main$viewPermutation = F4(
 	function (highlightedIndex, permCount, indexWithinComposition, _v0) {
 		var savedIndex = _v0.a;
@@ -8472,16 +8564,16 @@ var $elm_community$maybe_extra$Maybe$Extra$filter = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $author$project$Main$CancelEdit = {$: 17};
+var $author$project$Main$CancelEdit = {$: 18};
 var $author$project$Main$SaveEditedPermutation = F2(
 	function (a, b) {
-		return {$: 18, a: a, b: b};
+		return {$: 19, a: a, b: b};
 	});
 var $author$project$Main$SetPermutationCycles = function (a) {
-	return {$: 20, a: a};
+	return {$: 21, a: a};
 };
 var $author$project$Main$SetPermutationName = function (a) {
-	return {$: 19, a: a};
+	return {$: 20, a: a};
 };
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$json$Json$Decode$andThen = _Json_andThen;
@@ -8943,6 +9035,17 @@ var $author$project$Main$imageConfigControls = F4(
 							_List_fromArray(
 								[
 									$elm$html$Html$text('Add permutation')
+								])),
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Events$onClick($author$project$Main$DeleteUnused),
+									$elm$html$Html$Attributes$title('Remove all saved permutations that are not used in the composition')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Remove unused')
 								]))
 						])),
 					A2(
@@ -10125,7 +10228,7 @@ var $joakin$elm_canvas$Canvas$toHtml = F3(
 			entities);
 	});
 var $author$project$Main$view = function (model) {
-	var permutationIndices = model.g;
+	var permutationIndices = model.f;
 	var savedPermutations = model.e;
 	var setSize = model.p;
 	var canvasImage = model.E;
@@ -10178,11 +10281,6 @@ var $author$project$Main$view = function (model) {
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{
-		bk: $author$project$Main$init(3),
-		by: $author$project$Main$subscriptions,
-		bA: $author$project$Main$update,
-		bB: $author$project$Main$view
-	});
+	{bk: $author$project$Main$init, by: $author$project$Main$subscriptions, bA: $author$project$Main$update, bB: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(0))(0)}});}(this));
