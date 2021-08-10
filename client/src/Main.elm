@@ -58,6 +58,7 @@ type Msg
       -- Changing saved perms
     | SetSetSize Int
     | NewSavedPermutation
+    | DeleteUnused
     | UpdatePermutation Int PermutationUpdate
     | CancelEdit
     | SaveEditedPermutation Int Permutation
@@ -352,6 +353,14 @@ update msg model =
                     , savedPermutations = Dict.insert newPermIndex ( newPermName, newPerm ) model.savedPermutations
                 }
 
+        DeleteUnused ->
+            pure
+                { model
+                    | savedPermutations =
+                        Dict.filter (\idx _ -> List.member idx model.permutationIndices)
+                            model.savedPermutations
+                }
+
 
 pure : Model -> ( Model, Cmd Msg )
 pure model =
@@ -485,7 +494,11 @@ imageConfigControls { savedPermutations, setSize, canvasImage, permutationEdit, 
                     []
                 ]
             ]
-        , Html.div [] [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add permutation" ] ]
+        , Html.div []
+            [ Html.button [ HE.onClick NewSavedPermutation ] [ Html.text "Add permutation" ]
+            , Html.button [ HE.onClick DeleteUnused, HA.title "Remove all saved permutations that are not used in the composition" ]
+                [ Html.text "Remove unused" ]
+            ]
         , Html.div [] <|
             List.map
                 (\( idx, ( name, p ) ) -> viewSavedPermutation highlightedIndex idx name p permutationEdit)
@@ -745,7 +758,6 @@ subscriptions _ =
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
 -- TODO add button to shift perm right/left without affecting composition
 -- TODO when renaming, warn if newName already exists
--- TODO highlight perms unused in composition
 -- TODO make it possible to reorder perms in composition using DND
 -- TODO show additional detail about saved perms and composed perm (on hover?): order
 -- TODO allow removing duplicate saved perms
