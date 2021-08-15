@@ -8,6 +8,7 @@ import Canvas.Settings exposing (..)
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
 import Color
 import Dict exposing (Dict)
+import DnDList
 import Html exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -35,6 +36,7 @@ type alias Model =
     , canvasImage : CanvasImage
     , permutationEdit : Maybe EditState
     , highlightedIndex : Maybe Int
+    , compositionDndModel : DnDList.Model
     }
 
 
@@ -49,14 +51,12 @@ type Msg
     | HighlightIndex Int
     | ClearHighlight
       -- Changing composition
-    | ShiftPermutationLeft Int
-    | ShiftPermutationRight Int
     | RemovePermutationFromComposition Int
     | AddPermutationToComposition Int
     | GenerateAll
     | ResetAll
+    | DndPermutation DnDList.Msg
       -- Changing saved perms
-    | SetSetSize Int
     | NewSavedPermutation
     | DeleteUnused
     | UpdatePermutation Int PermutationUpdate
@@ -65,6 +65,7 @@ type Msg
     | SetPermutationName String
     | SetPermutationCycles String
     | SetPermutations (List Permutation)
+    | SetSetSize Int
     | NoOp
 
 
@@ -119,6 +120,7 @@ init () =
       , canvasImage = defaultImage
       , permutationEdit = Nothing
       , highlightedIndex = Nothing
+      , compositionDndModel = compositionDndSystem.model
       }
     , Cmd.map SetPermutations (Permutation.generateMany setSize permCount)
     )
@@ -161,20 +163,6 @@ update msg model =
                     , permutationIndices = List.map (always 0) model.permutationIndices
                     , savedPermutations = Dict.fromList [ ( 0, ( "id", Permutation.identity newN ) ) ]
                 }
-
-        ShiftPermutationLeft i ->
-            if i > 0 then
-                pure { model | permutationIndices = List.swapAt (i - 1) i model.permutationIndices }
-
-            else
-                pure model
-
-        ShiftPermutationRight i ->
-            if i < List.length model.permutationIndices then
-                pure { model | permutationIndices = List.swapAt i (i + 1) model.permutationIndices }
-
-            else
-                pure model
 
         GenerateAll ->
             ( model, Cmd.map SetPermutations (Permutation.generateMany model.setSize (List.length model.permutationIndices)) )
@@ -360,6 +348,21 @@ update msg model =
                             model.savedPermutations
                 }
 
+        DndPermutation dndMsg ->
+            let
+                ( newCompositionDndModel, newPermutationIndices ) =
+                    compositionDndSystem.update dndMsg model.compositionDndModel model.permutationIndices
+            in
+            ( { model
+                | compositionDndModel = newCompositionDndModel
+                , permutationIndices = newPermutationIndices
+
+                --  whenever DnD is in progress, clear all highlights
+                , highlightedIndex = Nothing
+              }
+            , compositionDndSystem.commands newCompositionDndModel
+            )
+
 
 pure : Model -> ( Model, Cmd Msg )
 pure model =
@@ -398,7 +401,7 @@ view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) 
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ imageConfigControls model permCount permutations permsWitIndicesAndNames
+        [ controlsPanel model permutations permsWitIndicesAndNames
         , Canvas.toHtml ( canvasWidth, canvasHeight )
             []
             (Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight)
@@ -409,8 +412,48 @@ view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) 
         ]
 
 
-imageConfigControls : Model -> Int -> List Permutation -> List ( Int, ( String, Permutation ) ) -> Html Msg
-imageConfigControls { savedPermutations, setSize, canvasImage, permutationEdit, highlightedIndex } permCount perms permsWithIdxsAndNames =
+controlsPanel : Model -> List Permutation -> List ( Int, ( String, Permutation ) ) -> Html Msg
+controlsPanel ({ savedPermutations, setSize, canvasImage, permutationIndices, highlightedIndex, compositionDndModel } as model) perms permsWithIdxsAndNames =
+    Html.div []
+        [ imageControlsView canvasImage
+        , savedPermutationsView model
+        , Html.h3 [] [ Html.text "Composition" ]
+        , Html.div []
+            [ Html.button [ HE.onClick GenerateAll ] [ Html.text "Gen all" ]
+            , Html.button [ HE.onClick ResetAll ] [ Html.text "Reset all" ]
+            ]
+        , Html.div [] <|
+            List.indexedMap (\i -> permutationDndWrapper compositionDndModel i << viewPermutation highlightedIndex i)
+                permsWithIdxsAndNames
+        , dndGhostView compositionDndModel permutationIndices savedPermutations
+        , let
+            composition =
+                List.foldr Permutation.compose (Permutation.identity setSize) perms
+          in
+          Html.div []
+            [ Html.div []
+                [ Html.text "All composed: "
+                , Html.br [] []
+                , Html.text <| Permutation.showCycles composition
+                ]
+            , Html.div []
+                [ Html.text "Fixed points: "
+                , Html.br [] []
+                , Html.text <|
+                    case Permutation.fixedPoints composition of
+                        [] ->
+                            "none"
+
+                        fps ->
+                            String.join ", " <|
+                                List.map String.fromInt fps
+                ]
+            ]
+        ]
+
+
+imageControlsView : CanvasImage -> Html Msg
+imageControlsView canvasImage =
     Html.div []
         [ Html.h3 [] [ Html.text "Image controls" ]
         , Html.div []
@@ -479,7 +522,13 @@ imageConfigControls { savedPermutations, setSize, canvasImage, permutationEdit, 
                 ]
             ]
         , Html.button [ HE.onClick ResetImage ] [ Html.text "Reset" ]
-        , Html.h3 [] [ Html.text "Permutations" ]
+        ]
+
+
+savedPermutationsView : Model -> Html Msg
+savedPermutationsView { setSize, savedPermutations, highlightedIndex, permutationEdit } =
+    Html.div []
+        [ Html.h3 [] [ Html.text "Permutations" ]
         , Html.div []
             [ Html.label []
                 [ Html.text "Set size "
@@ -500,38 +549,8 @@ imageConfigControls { savedPermutations, setSize, canvasImage, permutationEdit, 
             ]
         , Html.div [] <|
             List.map
-                (\( idx, ( name, p ) ) -> viewSavedPermutation highlightedIndex idx name p permutationEdit)
+                (\( savedIdx, ( name, p ) ) -> viewSavedPermutation highlightedIndex savedIdx name p permutationEdit)
                 (Dict.toList savedPermutations)
-        , Html.h3 [] [ Html.text "Composition" ]
-        , Html.div []
-            [ Html.button [ HE.onClick GenerateAll ] [ Html.text "Gen all" ]
-            , Html.button [ HE.onClick ResetAll ] [ Html.text "Reset all" ]
-            ]
-        , Html.div [] <|
-            List.indexedMap (viewPermutation highlightedIndex permCount) permsWithIdxsAndNames
-        , let
-            composition =
-                List.foldr Permutation.compose (Permutation.identity setSize) perms
-          in
-          Html.div []
-            [ Html.div []
-                [ Html.text "All composed: "
-                , Html.br [] []
-                , Html.text <| Permutation.showCycles composition
-                ]
-            , Html.div []
-                [ Html.text "Fixed points: "
-                , Html.br [] []
-                , Html.text <|
-                    case Permutation.fixedPoints composition of
-                        [] ->
-                            "none"
-
-                        fps ->
-                            String.join ", " <|
-                                List.map String.fromInt fps
-                ]
-            ]
         ]
 
 
@@ -561,6 +580,59 @@ permutationWrapper highlightedIndex savedIndex =
         ]
 
 
+permutationDndWrapper : DnDList.Model -> Int -> Html Msg -> Html Msg
+permutationDndWrapper compositionDndModel indexWithinList permView =
+    let
+        itemId : String
+        itemId =
+            "id-" ++ String.fromInt indexWithinList
+    in
+    case compositionDndSystem.info compositionDndModel of
+        Just { dragIndex } ->
+            if dragIndex /= indexWithinList then
+                Html.div (HA.id itemId :: compositionDndSystem.dropEvents indexWithinList itemId)
+                    [ permView ]
+
+            else
+                Html.div
+                    [ HA.id itemId
+                    , HA.style "background-color" "lightgray"
+                    , HA.style "height" "50px"
+                    ]
+                    []
+
+        Nothing ->
+            Html.div (HA.id itemId :: compositionDndSystem.dragEvents indexWithinList itemId)
+                [ permView ]
+
+
+dndGhostView : DnDList.Model -> List Int -> Dict Int ( String, Permutation ) -> Html.Html Msg
+dndGhostView compositionDndModel items savedPermutations =
+    let
+        maybeDragItem =
+            compositionDndSystem.info compositionDndModel
+                |> Maybe.andThen
+                    (\{ dragIndex } ->
+                        List.getAt dragIndex items |> Maybe.map (Tuple.pair dragIndex)
+                     --                 items |> List.drop dragIndex |> List.head
+                    )
+    in
+    case maybeDragItem of
+        Just ( indexWithinComposition, savedIndex ) ->
+            Html.div
+                (compositionDndSystem.ghostStyles compositionDndModel)
+                [ case Dict.get savedIndex savedPermutations of
+                    Just p ->
+                        viewPermutation Nothing indexWithinComposition ( savedIndex, p )
+
+                    Nothing ->
+                        Html.text ""
+                ]
+
+        Nothing ->
+            Html.text ""
+
+
 cyclesInputId : String
 cyclesInputId =
     "perm-input"
@@ -586,32 +658,17 @@ onEnter msg =
         )
 
 
-viewPermutation : Maybe Int -> Int -> Int -> ( Int, ( String, Permutation ) ) -> Html Msg
-viewPermutation highlightedIndex permCount indexWithinComposition ( savedIndex, ( name, perm ) ) =
+viewPermutation : Maybe Int -> Int -> ( Int, ( String, Permutation ) ) -> Html Msg
+viewPermutation highlightedIndex indexWithinComposition ( savedIndex, ( name, perm ) ) =
     permutationWrapper highlightedIndex
         savedIndex
         [ Html.div [] [ Html.text name ]
-        , Html.button
-            [ if indexWithinComposition > 0 then
-                HE.onClick (ShiftPermutationLeft indexWithinComposition)
-
-              else
-                HA.disabled True
-            , HA.title "Shift left without affecting composition"
-            ]
-            [ Html.text "«" ]
-        , Html.button
-            [ if indexWithinComposition < (permCount - 1) then
-                HE.onClick (ShiftPermutationRight indexWithinComposition)
-
-              else
-                HA.disabled True
-            , HA.title "Shift right without affecting composition"
-            ]
-            [ Html.text "»" ]
         , Html.text <| Permutation.showCycles perm
         , Html.button
             [ HE.onClick (RemovePermutationFromComposition indexWithinComposition)
+
+            -- Avoid triggering DND when clicking on delete button
+            , HE.stopPropagationOn "mousedown" (Decode.succeed ( NoOp, True ))
             , HA.title "Delete permutation"
             , HA.style "float" "right"
             ]
@@ -747,8 +804,24 @@ textAt =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    compositionDndSystem.subscriptions model.compositionDndModel
+
+
+{-| Config for reordering permutation indices within the composition list.
+-}
+compositionDndConfig : DnDList.Config Int
+compositionDndConfig =
+    { beforeUpdate = \_ _ list -> list
+    , movement = DnDList.Vertical
+    , listen = DnDList.OnDrag
+    , operation = DnDList.Rotate
+    }
+
+
+compositionDndSystem : DnDList.System Int Msg
+compositionDndSystem =
+    DnDList.create compositionDndConfig DndPermutation
 
 
 
@@ -757,6 +830,5 @@ subscriptions _ =
 -- TODO add hard-wired model with pre-saved rubik's cube generating permutations
 -- TODO add button to shift perm right/left without affecting composition
 -- TODO when renaming, warn if newName already exists
--- TODO make it possible to reorder perms in composition using DND
 -- TODO show additional detail about saved perms and composed perm (on hover?): order
 -- TODO allow removing duplicate saved perms
