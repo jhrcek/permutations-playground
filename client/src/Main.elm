@@ -5,6 +5,8 @@ import Browser
 import Browser.Dom
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
+import Canvas.Settings.Advanced as CSA
+import Canvas.Settings.Line as CS
 import Canvas.Settings.Text exposing (TextAlign(..), TextBaseLine(..), align, baseLine, font)
 import Color
 import Dict exposing (Dict)
@@ -380,7 +382,8 @@ view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) 
         permCount =
             List.length permutationIndices
 
-        permsWitIndicesAndNames =
+        permsWithIndicesAndNames : List ( Int, ( String, Permutation ) )
+        permsWithIndicesAndNames =
             List.filterMap
                 (\savedIndex ->
                     Maybe.map (\np -> ( savedIndex, np )) <|
@@ -388,8 +391,12 @@ view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) 
                 )
                 permutationIndices
 
+        permsWithIndices : List ( Int, Permutation )
+        permsWithIndices =
+            List.map (Tuple.mapSecond Tuple.second) permsWithIndicesAndNames
+
         permutations =
-            List.map (Tuple.second >> Tuple.second) permsWitIndicesAndNames
+            List.map (Tuple.second >> Tuple.second) permsWithIndicesAndNames
 
         canvasWidth =
             permCount * canvasImage.horizontalDist + 2 * round canvasImage.paddingX
@@ -401,19 +408,19 @@ view ({ permutationIndices, savedPermutations, setSize, canvasImage } as model) 
         [ HA.style "display" "grid"
         , HA.style "grid-template-columns" "300px auto"
         ]
-        [ controlsPanel model permutations permsWitIndicesAndNames
-        , Canvas.toHtml ( canvasWidth, canvasHeight )
-            []
-            (Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight)
-                :: permutationLines canvasImage setSize permutations
-                :: permutationCircles canvasImage setSize permutations
-                :: permutationTexts canvasImage setSize permutations
-            )
+        [ controlsPanel model permutations permsWithIndicesAndNames
+        , Canvas.toHtml ( canvasWidth, canvasHeight ) [] <|
+            List.concat
+                [ [ Canvas.clear ( 0, 0 ) (toFloat canvasWidth) (toFloat canvasHeight) ]
+                , permutationLines canvasImage setSize permsWithIndices model.highlightedIndex
+                , [ permutationCircles canvasImage setSize permCount ]
+                , permutationTexts canvasImage setSize permCount
+                ]
         ]
 
 
 controlsPanel : Model -> List Permutation -> List ( Int, ( String, Permutation ) ) -> Html Msg
-controlsPanel ({ savedPermutations, setSize, canvasImage, permutationIndices, highlightedIndex, compositionDndModel } as model) perms permsWithIdxsAndNames =
+controlsPanel ({ savedPermutations, setSize, canvasImage, permutationIndices, highlightedIndex, compositionDndModel } as model) perms permsWithIndicesAndNames =
     Html.div []
         [ imageControlsView canvasImage
         , savedPermutationsView model
@@ -424,7 +431,7 @@ controlsPanel ({ savedPermutations, setSize, canvasImage, permutationIndices, hi
             ]
         , Html.div [] <|
             List.indexedMap (\i -> permutationDndWrapper compositionDndModel i << viewPermutation highlightedIndex i)
-                permsWithIdxsAndNames
+                permsWithIndicesAndNames
         , dndGhostView compositionDndModel permutationIndices savedPermutations
         , let
             composition =
@@ -730,41 +737,51 @@ viewPermutationEditor idx editState =
     ]
 
 
-permutationLines : CanvasImage -> Int -> List Permutation -> Renderable
-permutationLines ci n permutations =
-    Canvas.shapes
-        [ fill Color.white, stroke Color.black ]
-        (List.map
-            (\i ->
-                Canvas.path ( ci.paddingX, ci.paddingY + toFloat (ci.verticalDist * i) )
-                    (List.foldl
-                        (\(Permutation p) ( curX, curXDim, moves ) ->
-                            let
-                                nextX =
-                                    Maybe.withDefault 0 (Array.get curX p)
-                            in
-                            ( nextX
-                            , curXDim + ci.horizontalDist
-                            , moves ++ [ Canvas.lineTo ( toFloat curXDim, toFloat (round ci.paddingY + ci.verticalDist * nextX) ) ]
+permutationLines : CanvasImage -> Int -> List ( Int, Permutation ) -> Maybe Int -> List Renderable
+permutationLines ci setSize permsWithIndices highlightedIndex =
+    let
+        linesForOnePerm indexInComposition ( savedIdx, Permutation perm ) =
+            let
+                ( strokeColor, lineWidthPx ) =
+                    if highlightedIndex == Just savedIdx then
+                        ( Color.lightRed, 2 )
+
+                    else
+                        ( Color.black, 1 )
+            in
+            Canvas.shapes
+                [ fill Color.white
+                , stroke strokeColor
+                , CS.lineWidth lineWidthPx
+                , CSA.transform [ CSA.translate ci.paddingX ci.paddingY ]
+                ]
+                (List.map
+                    (\i ->
+                        Canvas.path
+                            ( toFloat (indexInComposition * ci.horizontalDist)
+                            , toFloat (i * ci.verticalDist)
                             )
-                        )
-                        ( i, round ci.paddingX + ci.horizontalDist, [] )
-                        permutations
-                        |> (\( _, _, moves ) -> moves)
+                            [ Canvas.lineTo
+                                ( toFloat ((indexInComposition + 1) * ci.horizontalDist)
+                                , toFloat ((Array.get i perm |> Maybe.withDefault 0) * ci.verticalDist)
+                                )
+                            ]
                     )
-            )
-            (List.range 0 (n - 1))
-        )
+                 <|
+                    List.range 0 (setSize - 1)
+                )
+    in
+    List.indexedMap linesForOnePerm permsWithIndices
 
 
-permutationCircles : CanvasImage -> Int -> List Permutation -> Renderable
-permutationCircles ci n permutations =
+permutationCircles : CanvasImage -> Int -> Int -> Renderable
+permutationCircles ci setSize permCount =
     Canvas.shapes
         [ fill Color.white, stroke Color.black ]
-        (List.range 0 (List.length permutations)
+        (List.range 0 permCount
             |> List.concatMap
                 (\colIdx ->
-                    List.range 0 (n - 1)
+                    List.range 0 (setSize - 1)
                         |> List.map
                             (\rowIdx ->
                                 Canvas.circle
@@ -777,12 +794,12 @@ permutationCircles ci n permutations =
         )
 
 
-permutationTexts : CanvasImage -> Int -> List Permutation -> List Renderable
-permutationTexts ci n permutations =
-    List.range 0 (List.length permutations)
+permutationTexts : CanvasImage -> Int -> Int -> List Renderable
+permutationTexts ci setSize permCount =
+    List.range 0 permCount
         |> List.concatMap
             (\col ->
-                List.range 0 (n - 1)
+                List.range 0 (setSize - 1)
                     |> List.map
                         (\row ->
                             textAt
