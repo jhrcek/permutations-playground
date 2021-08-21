@@ -2704,7 +2704,7 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		G: func(record.G),
+		F: func(record.F),
 		at: record.at,
 		aq: record.aq
 	}
@@ -2974,7 +2974,7 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.G;
+		var message = !tag ? value : tag < 3 ? value.a : value.F;
 		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.at;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
@@ -5401,7 +5401,7 @@ var $elm$browser$Browser$Dom$getElement = _Browser_getElement;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $annaghi$dnd_list$DnDList$dragElementCommands = F2(
 	function (stepMsg, state) {
-		var _v0 = state.F;
+		var _v0 = state.D;
 		if (_v0.$ === 1) {
 			return A2(
 				$elm$core$Task$attempt,
@@ -5419,7 +5419,7 @@ var $annaghi$dnd_list$DnDList$dropElementCommands = F2(
 		return (!state.n) ? A2(
 			$elm$core$Task$attempt,
 			A2($elm$core$Basics$composeL, stepMsg, $annaghi$dnd_list$DnDList$GotDropElement),
-			$elm$browser$Browser$Dom$getElement(state.N)) : $elm$core$Platform$Cmd$none;
+			$elm$browser$Browser$Dom$getElement(state.O)) : $elm$core$Platform$Cmd$none;
 	});
 var $annaghi$dnd_list$DnDList$commands = F2(
 	function (stepMsg, _v0) {
@@ -5560,7 +5560,7 @@ var $annaghi$dnd_list$DnDList$ghostStyles = F2(
 			return _List_Nil;
 		} else {
 			var state = model.a;
-			var _v2 = state.F;
+			var _v2 = state.D;
 			if (!_v2.$) {
 				var element = _v2.a.bs;
 				var viewport = _v2.a.bV;
@@ -5572,7 +5572,7 @@ var $annaghi$dnd_list$DnDList$ghostStyles = F2(
 								'transform',
 								A2(
 									$annaghi$dnd_list$Internal$Common$Utils$translate,
-									$elm$core$Basics$round(((state.u.s - state.B.s) + element.s) - viewport.s),
+									$elm$core$Basics$round(((state.u.s - state.z.s) + element.s) - viewport.s),
 									$elm$core$Basics$round(element.t - viewport.t)));
 						case 2:
 							return A2(
@@ -5581,15 +5581,15 @@ var $annaghi$dnd_list$DnDList$ghostStyles = F2(
 								A2(
 									$annaghi$dnd_list$Internal$Common$Utils$translate,
 									$elm$core$Basics$round(element.s - viewport.s),
-									$elm$core$Basics$round(((state.u.t - state.B.t) + element.t) - viewport.t)));
+									$elm$core$Basics$round(((state.u.t - state.z.t) + element.t) - viewport.t)));
 						default:
 							return A2(
 								$elm$html$Html$Attributes$style,
 								'transform',
 								A2(
 									$annaghi$dnd_list$Internal$Common$Utils$translate,
-									$elm$core$Basics$round(((state.u.s - state.B.s) + element.s) - viewport.s),
-									$elm$core$Basics$round(((state.u.t - state.B.t) + element.t) - viewport.t)));
+									$elm$core$Basics$round(((state.u.s - state.z.s) + element.s) - viewport.s),
+									$elm$core$Basics$round(((state.u.t - state.z.t) + element.t) - viewport.t)));
 					}
 				}();
 				var baseStyles = _List_fromArray(
@@ -5648,10 +5648,10 @@ var $annaghi$dnd_list$DnDList$info = function (_v0) {
 				$elm$core$Maybe$map2,
 				F2(
 					function (dragElement, dropElement) {
-						return {u: state.u, F: dragElement, V: state.V, aC: state.aC, M: dropElement, N: state.N, v: state.v, B: state.B};
+						return {u: state.u, D: dragElement, V: state.V, aC: state.aC, N: dropElement, O: state.O, v: state.v, z: state.z};
 					}),
-				state.F,
-				state.M);
+				state.D,
+				state.N);
 		},
 		model);
 };
@@ -6421,7 +6421,7 @@ var $annaghi$dnd_list$DnDList$update = F4(
 				var xy = msg.c;
 				return _Utils_Tuple2(
 					$elm$core$Maybe$Just(
-						{u: xy, n: 0, F: $elm$core$Maybe$Nothing, V: dragElementId, aC: dragIndex, M: $elm$core$Maybe$Nothing, N: dragElementId, v: dragIndex, B: xy}),
+						{u: xy, n: 0, D: $elm$core$Maybe$Nothing, V: dragElementId, aC: dragIndex, N: $elm$core$Maybe$Nothing, O: dragElementId, v: dragIndex, z: xy}),
 					list);
 			case 1:
 				var xy = msg.a;
@@ -6444,7 +6444,7 @@ var $annaghi$dnd_list$DnDList$update = F4(
 						function (state) {
 							return _Utils_update(
 								state,
-								{N: dropElementId, v: dropIndex});
+								{O: dropElementId, v: dropIndex});
 						},
 						model),
 					list);
@@ -6514,8 +6514,8 @@ var $annaghi$dnd_list$DnDList$update = F4(
 								return _Utils_update(
 									state,
 									{
-										F: $elm$core$Maybe$Just(dragElement),
-										M: $elm$core$Maybe$Just(dragElement)
+										D: $elm$core$Maybe$Just(dragElement),
+										N: $elm$core$Maybe$Just(dragElement)
 									});
 							},
 							model),
@@ -6533,7 +6533,7 @@ var $annaghi$dnd_list$DnDList$update = F4(
 								return _Utils_update(
 									state,
 									{
-										M: $elm$core$Maybe$Just(dropElement)
+										N: $elm$core$Maybe$Just(dropElement)
 									});
 							},
 							model),
@@ -6555,7 +6555,7 @@ var $annaghi$dnd_list$DnDList$create = F2(
 		};
 	});
 var $author$project$Main$compositionDndSystem = A2($annaghi$dnd_list$DnDList$create, $author$project$Main$compositionDndConfig, $author$project$Main$DndPermutation);
-var $author$project$Main$defaultImage = {aa: 15, y: 100, z: 100, A: 100, D: 100};
+var $author$project$Main$defaultImage = {aa: 15, y: 100, G: 100, H: 100, B: 100};
 var $elm$random$Random$Generate = $elm$core$Basics$identity;
 var $elm$random$Random$Seed = F2(
 	function (a, b) {
@@ -6859,7 +6859,7 @@ var $author$project$Main$init = function (_v0) {
 	var setSize = 4;
 	var permCount = 3;
 	return _Utils_Tuple2(
-		{J: $author$project$Main$defaultImage, U: $author$project$Main$compositionDndSystem.bI, P: $elm$core$Maybe$Nothing, q: $elm$core$Maybe$Nothing, g: _List_Nil, e: $elm$core$Dict$empty, m: setSize},
+		{K: $author$project$Main$defaultImage, U: $author$project$Main$compositionDndSystem.bI, E: $elm$core$Maybe$Nothing, q: $elm$core$Maybe$Nothing, g: _List_Nil, e: $elm$core$Dict$empty, m: setSize},
 		A2(
 			$elm$core$Platform$Cmd$map,
 			$author$project$Main$SetPermutations,
@@ -8627,7 +8627,7 @@ var $author$project$Main$updateImage = F2(
 		return _Utils_update(
 			model,
 			{
-				J: f(model.J)
+				K: f(model.K)
 			});
 	});
 var $author$project$Main$update = F2(
@@ -8641,13 +8641,13 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							P: $elm$core$Maybe$Just(i)
+							E: $elm$core$Maybe$Just(i)
 						}));
 			case 7:
 				return $author$project$Main$pure(
 					_Utils_update(
 						model,
-						{P: $elm$core$Maybe$Nothing}));
+						{E: $elm$core$Maybe$Nothing}));
 			case 0:
 				var newDomCodDist = msg.a;
 				return $author$project$Main$pure(
@@ -8667,7 +8667,7 @@ var $author$project$Main$update = F2(
 						function (image) {
 							return _Utils_update(
 								image,
-								{D: newVerticalDist});
+								{B: newVerticalDist});
 						},
 						model));
 			case 2:
@@ -8689,7 +8689,7 @@ var $author$project$Main$update = F2(
 						function (image) {
 							return _Utils_update(
 								image,
-								{z: newPaddingX});
+								{G: newPaddingX});
 						},
 						model));
 			case 4:
@@ -8700,14 +8700,14 @@ var $author$project$Main$update = F2(
 						function (image) {
 							return _Utils_update(
 								image,
-								{A: newPaddingY});
+								{H: newPaddingY});
 						},
 						model));
 			case 5:
 				return $author$project$Main$pure(
 					_Utils_update(
 						model,
-						{J: $author$project$Main$defaultImage}));
+						{K: $author$project$Main$defaultImage}));
 			case 21:
 				var newN = msg.a;
 				return $author$project$Main$pure(
@@ -9020,7 +9020,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{U: newCompositionDndModel, P: $elm$core$Maybe$Nothing, g: newPermutationIndices}),
+						{U: newCompositionDndModel, E: $elm$core$Maybe$Nothing, g: newPermutationIndices}),
 					$author$project$Main$compositionDndSystem.bl(newCompositionDndModel));
 		}
 	});
@@ -9034,8 +9034,8 @@ var $joakin$elm_canvas$Canvas$clear = F3(
 	function (point, w, h) {
 		return {
 			bl: _List_Nil,
-			K: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
-			L: A3($joakin$elm_canvas$Canvas$Internal$Canvas$DrawableClear, point, w, h)
+			L: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
+			M: A3($joakin$elm_canvas$Canvas$Internal$Canvas$DrawableClear, point, w, h)
 		};
 	});
 var $author$project$Main$GenerateAll = {$: 10};
@@ -9343,7 +9343,7 @@ var $author$project$Main$imageControlsView = function (canvasImage) {
 										$elm$html$Html$Attributes$min('20'),
 										$elm$html$Html$Attributes$max('200'),
 										$elm$html$Html$Attributes$value(
-										$elm$core$String$fromInt(canvasImage.D)),
+										$elm$core$String$fromInt(canvasImage.B)),
 										$elm$html$Html$Events$onInput(
 										A2(
 											$elm$core$Basics$composeL,
@@ -9407,7 +9407,7 @@ var $author$project$Main$imageControlsView = function (canvasImage) {
 										$elm$html$Html$Attributes$min('10'),
 										$elm$html$Html$Attributes$max('200'),
 										$elm$html$Html$Attributes$value(
-										$elm$core$String$fromFloat(canvasImage.z)),
+										$elm$core$String$fromFloat(canvasImage.G)),
 										$elm$html$Html$Events$onInput(
 										A2(
 											$elm$core$Basics$composeL,
@@ -9439,7 +9439,7 @@ var $author$project$Main$imageControlsView = function (canvasImage) {
 										$elm$html$Html$Attributes$min('10'),
 										$elm$html$Html$Attributes$max('200'),
 										$elm$html$Html$Attributes$value(
-										$elm$core$String$fromFloat(canvasImage.A)),
+										$elm$core$String$fromFloat(canvasImage.H)),
 										$elm$html$Html$Events$onInput(
 										A2(
 											$elm$core$Basics$composeL,
@@ -9740,7 +9740,7 @@ var $author$project$Main$viewSavedPermutation = F5(
 var $author$project$Main$savedPermutationsView = function (_v0) {
 	var setSize = _v0.m;
 	var savedPermutations = _v0.e;
-	var highlightedIndex = _v0.P;
+	var highlightedIndex = _v0.E;
 	var permutationEdit = _v0.q;
 	return A2(
 		$elm$html$Html$div,
@@ -9833,12 +9833,12 @@ var $author$project$Main$savedPermutationsView = function (_v0) {
 			]));
 };
 var $author$project$Main$controlsPanel = F3(
-	function (model, perms, permsWithIdxsAndNames) {
+	function (model, perms, permsWithIndicesAndNames) {
 		var savedPermutations = model.e;
 		var setSize = model.m;
-		var canvasImage = model.J;
+		var canvasImage = model.K;
 		var permutationIndices = model.g;
-		var highlightedIndex = model.P;
+		var highlightedIndex = model.E;
 		var compositionDndModel = model.U;
 		return A2(
 			$elm$html$Html$div,
@@ -9891,7 +9891,7 @@ var $author$project$Main$controlsPanel = F3(
 								A2($author$project$Main$permutationDndWrapper, compositionDndModel, i),
 								A2($author$project$Main$viewPermutation, highlightedIndex, i));
 						},
-						permsWithIdxsAndNames)),
+						permsWithIndicesAndNames)),
 					A3($author$project$Main$dndGhostView, compositionDndModel, permutationIndices, savedPermutations),
 					function () {
 					var composition = A3(
@@ -10063,14 +10063,14 @@ var $joakin$elm_canvas$Canvas$addSettingsToRenderable = F2(
 						return _Utils_update(
 							r,
 							{
-								L: f(r.L)
+								M: f(r.M)
 							});
 					default:
 						var op = setting.a;
 						return _Utils_update(
 							r,
 							{
-								K: A2($joakin$elm_canvas$Canvas$mergeDrawOp, r.K, op)
+								L: A2($joakin$elm_canvas$Canvas$mergeDrawOp, r.L, op)
 							});
 				}
 			});
@@ -10083,8 +10083,8 @@ var $joakin$elm_canvas$Canvas$shapes = F2(
 			settings,
 			{
 				bl: _List_Nil,
-				K: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
-				L: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableShapes(ss)
+				L: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
+				M: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableShapes(ss)
 			});
 	});
 var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
@@ -10093,7 +10093,7 @@ var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 };
 var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $author$project$Main$permutationCircles = F3(
-	function (ci, n, permutations) {
+	function (ci, setSize, permCount) {
 		return A2(
 			$joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
@@ -10109,84 +10109,20 @@ var $author$project$Main$permutationCircles = F3(
 						function (rowIdx) {
 							return A2(
 								$joakin$elm_canvas$Canvas$circle,
-								_Utils_Tuple2(ci.z + (colIdx * ci.y), ci.A + (rowIdx * ci.D)),
+								_Utils_Tuple2(ci.G + (colIdx * ci.y), ci.H + (rowIdx * ci.B)),
 								ci.aa);
 						},
-						A2($elm$core$List$range, 0, n - 1));
+						A2($elm$core$List$range, 0, setSize - 1));
 				},
-				A2(
-					$elm$core$List$range,
-					0,
-					$elm$core$List$length(permutations))));
+				A2($elm$core$List$range, 0, permCount)));
 	});
+var $avh4$elm_color$Color$lightRed = A4($avh4$elm_color$Color$RgbaSpace, 239 / 255, 41 / 255, 41 / 255, 1.0);
 var $joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
 	return {$: 2, a: a};
 };
 var $joakin$elm_canvas$Canvas$lineTo = function (point) {
 	return $joakin$elm_canvas$Canvas$Internal$Canvas$LineTo(point);
 };
-var $joakin$elm_canvas$Canvas$Internal$Canvas$Path = F2(
-	function (a, b) {
-		return {$: 2, a: a, b: b};
-	});
-var $joakin$elm_canvas$Canvas$path = F2(
-	function (startingPoint, segments) {
-		return A2($joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
-	});
-var $author$project$Main$permutationLines = F3(
-	function (ci, n, permutations) {
-		return A2(
-			$joakin$elm_canvas$Canvas$shapes,
-			_List_fromArray(
-				[
-					$joakin$elm_canvas$Canvas$Settings$fill($avh4$elm_color$Color$white),
-					$joakin$elm_canvas$Canvas$Settings$stroke($avh4$elm_color$Color$black)
-				]),
-			A2(
-				$elm$core$List$map,
-				function (i) {
-					return A2(
-						$joakin$elm_canvas$Canvas$path,
-						_Utils_Tuple2(ci.z, ci.A + (ci.D * i)),
-						function (_v2) {
-							var moves = _v2.c;
-							return moves;
-						}(
-							A3(
-								$elm$core$List$foldl,
-								F2(
-									function (_v0, _v1) {
-										var p = _v0;
-										var curX = _v1.a;
-										var curXDim = _v1.b;
-										var moves = _v1.c;
-										var nextX = A2(
-											$elm$core$Maybe$withDefault,
-											0,
-											A2($elm$core$Array$get, curX, p));
-										return _Utils_Tuple3(
-											nextX,
-											curXDim + ci.y,
-											_Utils_ap(
-												moves,
-												_List_fromArray(
-													[
-														$joakin$elm_canvas$Canvas$lineTo(
-														_Utils_Tuple2(
-															curXDim,
-															$elm$core$Basics$round(ci.A) + (ci.D * nextX)))
-													])));
-									}),
-								_Utils_Tuple3(
-									i,
-									$elm$core$Basics$round(ci.z) + ci.y,
-									_List_Nil),
-								permutations)));
-				},
-				A2($elm$core$List$range, 0, n - 1)));
-	});
-var $joakin$elm_canvas$Canvas$Settings$Text$Center = 2;
-var $joakin$elm_canvas$Canvas$Settings$Text$Middle = 2;
 var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
 	return {$: 0, a: a};
 };
@@ -10217,6 +10153,180 @@ var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
 					_Utils_Tuple2('value', value)
 				]));
 	});
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth = function (value) {
+	return A2(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
+		'lineWidth',
+		$elm$json$Json$Encode$float(value));
+};
+var $joakin$elm_canvas$Canvas$Settings$Line$lineWidth = function (width) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth(width));
+};
+var $joakin$elm_canvas$Canvas$Internal$Canvas$Path = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
+var $joakin$elm_canvas$Canvas$path = F2(
+	function (startingPoint, segments) {
+		return A2($joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
+	});
+var $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommands = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(0),
+				entries));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn = F2(
+	function (name, args) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'type',
+					$elm$json$Json$Encode$string('function')),
+					_Utils_Tuple2(
+					'name',
+					$elm$json$Json$Encode$string(name)),
+					_Utils_Tuple2(
+					'args',
+					A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, args))
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$rotate = function (angle) {
+	return A2(
+		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn,
+		'rotate',
+		_List_fromArray(
+			[
+				$elm$json$Json$Encode$float(angle)
+			]));
+};
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$scale = F2(
+	function (x, y) {
+		return A2(
+			$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn,
+			'scale',
+			_List_fromArray(
+				[
+					$elm$json$Json$Encode$float(x),
+					$elm$json$Json$Encode$float(y)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$transform = F6(
+	function (a, b, c, d, e, f) {
+		return A2(
+			$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn,
+			'transform',
+			_List_fromArray(
+				[
+					$elm$json$Json$Encode$float(a),
+					$elm$json$Json$Encode$float(b),
+					$elm$json$Json$Encode$float(c),
+					$elm$json$Json$Encode$float(d),
+					$elm$json$Json$Encode$float(e),
+					$elm$json$Json$Encode$float(f)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$translate = F2(
+	function (x, y) {
+		return A2(
+			$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn,
+			'translate',
+			_List_fromArray(
+				[
+					$elm$json$Json$Encode$float(x),
+					$elm$json$Json$Encode$float(y)
+				]));
+	});
+var $joakin$elm_canvas$Canvas$Settings$Advanced$transform = function (transforms) {
+	return $joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommands(
+		A2(
+			$elm$core$List$map,
+			function (t) {
+				switch (t.$) {
+					case 0:
+						var angle = t.a;
+						return $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$rotate(angle);
+					case 1:
+						var x = t.a;
+						var y = t.b;
+						return A2($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$scale, x, y);
+					case 2:
+						var x = t.a;
+						var y = t.b;
+						return A2($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$translate, x, y);
+					default:
+						var m11 = t.a.bE;
+						var m12 = t.a.bF;
+						var m21 = t.a.bG;
+						var m22 = t.a.bH;
+						var dx = t.a.bq;
+						var dy = t.a.br;
+						return A6($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$transform, m11, m12, m21, m22, dx, dy);
+				}
+			},
+			transforms));
+};
+var $joakin$elm_canvas$Canvas$Settings$Advanced$Translate = F2(
+	function (a, b) {
+		return {$: 2, a: a, b: b};
+	});
+var $joakin$elm_canvas$Canvas$Settings$Advanced$translate = $joakin$elm_canvas$Canvas$Settings$Advanced$Translate;
+var $author$project$Main$permutationLines = F4(
+	function (ci, setSize, permsWithIndices, highlightedIndex) {
+		var linesForOnePerm = F2(
+			function (indexInComposition, _v1) {
+				var savedIdx = _v1.a;
+				var perm = _v1.b;
+				var _v0 = _Utils_eq(
+					highlightedIndex,
+					$elm$core$Maybe$Just(savedIdx)) ? _Utils_Tuple2($avh4$elm_color$Color$lightRed, 2) : _Utils_Tuple2($avh4$elm_color$Color$black, 1);
+				var strokeColor = _v0.a;
+				var lineWidthPx = _v0.b;
+				return A2(
+					$joakin$elm_canvas$Canvas$shapes,
+					_List_fromArray(
+						[
+							$joakin$elm_canvas$Canvas$Settings$fill($avh4$elm_color$Color$white),
+							$joakin$elm_canvas$Canvas$Settings$stroke(strokeColor),
+							$joakin$elm_canvas$Canvas$Settings$Line$lineWidth(lineWidthPx),
+							$joakin$elm_canvas$Canvas$Settings$Advanced$transform(
+							_List_fromArray(
+								[
+									A2($joakin$elm_canvas$Canvas$Settings$Advanced$translate, ci.G, ci.H)
+								]))
+						]),
+					A2(
+						$elm$core$List$map,
+						function (i) {
+							return A2(
+								$joakin$elm_canvas$Canvas$path,
+								_Utils_Tuple2(indexInComposition * ci.y, i * ci.B),
+								_List_fromArray(
+									[
+										$joakin$elm_canvas$Canvas$lineTo(
+										_Utils_Tuple2(
+											(indexInComposition + 1) * ci.y,
+											A2(
+												$elm$core$Maybe$withDefault,
+												0,
+												A2($elm$core$Array$get, i, perm)) * ci.B))
+									]));
+						},
+						A2($elm$core$List$range, 0, setSize - 1)));
+			});
+		return A2($elm$core$List$indexedMap, linesForOnePerm, permsWithIndices);
+	});
+var $joakin$elm_canvas$Canvas$Settings$Text$Center = 2;
+var $joakin$elm_canvas$Canvas$Settings$Text$Middle = 2;
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$textAlign = function (align) {
 	return A2(
 		$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
@@ -10292,8 +10402,8 @@ var $joakin$elm_canvas$Canvas$text = F3(
 			settings,
 			{
 				bl: _List_Nil,
-				K: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
-				L: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
+				L: $joakin$elm_canvas$Canvas$Internal$Canvas$NotSpecified,
+				M: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableText(
 					{an: $elm$core$Maybe$Nothing, aV: point, au: str})
 			});
 	});
@@ -10306,7 +10416,7 @@ var $author$project$Main$textAt = $joakin$elm_canvas$Canvas$text(
 			$joakin$elm_canvas$Canvas$Settings$Text$baseLine(2)
 		]));
 var $author$project$Main$permutationTexts = F3(
-	function (ci, n, permutations) {
+	function (ci, setSize, permCount) {
 		return A2(
 			$elm$core$List$concatMap,
 			function (col) {
@@ -10315,27 +10425,15 @@ var $author$project$Main$permutationTexts = F3(
 					function (row) {
 						return A2(
 							$author$project$Main$textAt,
-							_Utils_Tuple2(ci.z + (col * ci.y), ci.A + (row * ci.D)),
+							_Utils_Tuple2(ci.G + (col * ci.y), ci.H + (row * ci.B)),
 							$elm$core$String$fromInt(row + 1));
 					},
-					A2($elm$core$List$range, 0, n - 1));
+					A2($elm$core$List$range, 0, setSize - 1));
 			},
-			A2(
-				$elm$core$List$range,
-				0,
-				$elm$core$List$length(permutations)));
+			A2($elm$core$List$range, 0, permCount));
 	});
 var $elm$html$Html$canvas = _VirtualDom_node('canvas');
 var $joakin$elm_canvas$Canvas$cnvs = A2($elm$html$Html$canvas, _List_Nil, _List_Nil);
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(0),
-				entries));
-	});
 var $elm$virtual_dom$VirtualDom$property = F2(
 	function (key, value) {
 		return A2(
@@ -10362,24 +10460,7 @@ var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 };
 var $elm$html$Html$Keyed$node = $elm$virtual_dom$VirtualDom$keyedNode;
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$empty = _List_Nil;
-var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn = F2(
-	function (name, args) {
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'type',
-					$elm$json$Json$Encode$string('function')),
-					_Utils_Tuple2(
-					'name',
-					$elm$json$Json$Encode$string(name)),
-					_Utils_Tuple2(
-					'args',
-					A2($elm$json$Json$Encode$list, $elm$core$Basics$identity, args))
-				]));
-	});
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$beginPath = A2($joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn, 'beginPath', _List_Nil);
-var $elm$json$Json$Encode$float = _Json_wrap;
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$clearRect = F4(
 	function (x, y, width, height) {
 		return A2(
@@ -10904,8 +10985,8 @@ var $joakin$elm_canvas$Canvas$renderOne = F2(
 	function (_v0, cmds) {
 		var data = _v0;
 		var commands = data.bl;
-		var drawable = data.L;
-		var drawOp = data.K;
+		var drawable = data.M;
+		var drawOp = data.L;
 		return A2(
 			$elm$core$List$cons,
 			$joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$restore,
@@ -11022,8 +11103,8 @@ var $author$project$Main$view = function (model) {
 	var permutationIndices = model.g;
 	var savedPermutations = model.e;
 	var setSize = model.m;
-	var canvasImage = model.J;
-	var permsWitIndicesAndNames = A2(
+	var canvasImage = model.K;
+	var permsWithIndicesAndNames = A2(
 		$elm$core$List$filterMap,
 		function (savedIndex) {
 			return A2(
@@ -11037,10 +11118,14 @@ var $author$project$Main$view = function (model) {
 	var permutations = A2(
 		$elm$core$List$map,
 		A2($elm$core$Basics$composeR, $elm$core$Tuple$second, $elm$core$Tuple$second),
-		permsWitIndicesAndNames);
+		permsWithIndicesAndNames);
+	var permsWithIndices = A2(
+		$elm$core$List$map,
+		$elm$core$Tuple$mapSecond($elm$core$Tuple$second),
+		permsWithIndicesAndNames);
 	var permCount = $elm$core$List$length(permutationIndices);
-	var canvasWidth = (permCount * canvasImage.y) + (2 * $elm$core$Basics$round(canvasImage.z));
-	var canvasHeight = (setSize * canvasImage.D) + (2 * $elm$core$Basics$round(canvasImage.A));
+	var canvasWidth = (permCount * canvasImage.y) + (2 * $elm$core$Basics$round(canvasImage.G));
+	var canvasHeight = (setSize * canvasImage.B) + (2 * $elm$core$Basics$round(canvasImage.H));
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -11050,25 +11135,29 @@ var $author$project$Main$view = function (model) {
 			]),
 		_List_fromArray(
 			[
-				A3($author$project$Main$controlsPanel, model, permutations, permsWitIndicesAndNames),
+				A3($author$project$Main$controlsPanel, model, permutations, permsWithIndicesAndNames),
 				A3(
 				$joakin$elm_canvas$Canvas$toHtml,
 				_Utils_Tuple2(canvasWidth, canvasHeight),
 				_List_Nil,
-				A2(
-					$elm$core$List$cons,
-					A3(
-						$joakin$elm_canvas$Canvas$clear,
-						_Utils_Tuple2(0, 0),
-						canvasWidth,
-						canvasHeight),
-					A2(
-						$elm$core$List$cons,
-						A3($author$project$Main$permutationLines, canvasImage, setSize, permutations),
-						A2(
-							$elm$core$List$cons,
-							A3($author$project$Main$permutationCircles, canvasImage, setSize, permutations),
-							A3($author$project$Main$permutationTexts, canvasImage, setSize, permutations)))))
+				$elm$core$List$concat(
+					_List_fromArray(
+						[
+							_List_fromArray(
+							[
+								A3(
+								$joakin$elm_canvas$Canvas$clear,
+								_Utils_Tuple2(0, 0),
+								canvasWidth,
+								canvasHeight)
+							]),
+							A4($author$project$Main$permutationLines, canvasImage, setSize, permsWithIndices, model.E),
+							_List_fromArray(
+							[
+								A3($author$project$Main$permutationCircles, canvasImage, setSize, permCount)
+							]),
+							A3($author$project$Main$permutationTexts, canvasImage, setSize, permCount)
+						])))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
