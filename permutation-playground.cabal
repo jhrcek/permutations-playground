@@ -35,8 +35,6 @@ executable permutation-playground
     , containers
     , http-media
     , random
-    , servant
     , servant-server
     , turtle
-    , wai
     , warp
